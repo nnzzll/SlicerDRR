@@ -24,30 +24,27 @@
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_DRRGenerator
-class qSlicerDRRGeneratorFooBarWidgetPrivate
-  : public Ui_qSlicerDRRGeneratorFooBarWidget
+class qSlicerDRRGeneratorFooBarWidgetPrivate : public Ui_qSlicerDRRGeneratorFooBarWidget
 {
   Q_DECLARE_PUBLIC(qSlicerDRRGeneratorFooBarWidget);
-protected:
+
+ protected:
   qSlicerDRRGeneratorFooBarWidget* const q_ptr;
 
-public:
-  qSlicerDRRGeneratorFooBarWidgetPrivate(
-    qSlicerDRRGeneratorFooBarWidget& object);
+ public:
+  qSlicerDRRGeneratorFooBarWidgetPrivate(qSlicerDRRGeneratorFooBarWidget& object);
   virtual void setupUi(qSlicerDRRGeneratorFooBarWidget*);
 };
 
 // --------------------------------------------------------------------------
-qSlicerDRRGeneratorFooBarWidgetPrivate
-::qSlicerDRRGeneratorFooBarWidgetPrivate(
-  qSlicerDRRGeneratorFooBarWidget& object)
-  : q_ptr(&object)
+qSlicerDRRGeneratorFooBarWidgetPrivate ::qSlicerDRRGeneratorFooBarWidgetPrivate(
+    qSlicerDRRGeneratorFooBarWidget& object)
+    : q_ptr(&object)
 {
 }
 
 // --------------------------------------------------------------------------
-void qSlicerDRRGeneratorFooBarWidgetPrivate
-::setupUi(qSlicerDRRGeneratorFooBarWidget* widget)
+void qSlicerDRRGeneratorFooBarWidgetPrivate ::setupUi(qSlicerDRRGeneratorFooBarWidget* widget)
 {
   this->Ui_qSlicerDRRGeneratorFooBarWidget::setupUi(widget);
 }
@@ -56,17 +53,12 @@ void qSlicerDRRGeneratorFooBarWidgetPrivate
 // qSlicerDRRGeneratorFooBarWidget methods
 
 //-----------------------------------------------------------------------------
-qSlicerDRRGeneratorFooBarWidget
-::qSlicerDRRGeneratorFooBarWidget(QWidget* parentWidget)
-  : Superclass( parentWidget )
-  , d_ptr( new qSlicerDRRGeneratorFooBarWidgetPrivate(*this) )
+qSlicerDRRGeneratorFooBarWidget ::qSlicerDRRGeneratorFooBarWidget(QWidget* parentWidget)
+    : Superclass(parentWidget), d_ptr(new qSlicerDRRGeneratorFooBarWidgetPrivate(*this))
 {
   Q_D(qSlicerDRRGeneratorFooBarWidget);
   d->setupUi(this);
 }
 
 //-----------------------------------------------------------------------------
-qSlicerDRRGeneratorFooBarWidget
-::~qSlicerDRRGeneratorFooBarWidget()
-{
-}
+qSlicerDRRGeneratorFooBarWidget ::~qSlicerDRRGeneratorFooBarWidget() {}

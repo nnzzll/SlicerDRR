@@ -33,14 +33,10 @@
 vtkStandardNewMacro(vtkSlicerDRRGeneratorLogic);
 
 //----------------------------------------------------------------------------
-vtkSlicerDRRGeneratorLogic::vtkSlicerDRRGeneratorLogic()
-{
-}
+vtkSlicerDRRGeneratorLogic::vtkSlicerDRRGeneratorLogic() {}
 
 //----------------------------------------------------------------------------
-vtkSlicerDRRGeneratorLogic::~vtkSlicerDRRGeneratorLogic()
-{
-}
+vtkSlicerDRRGeneratorLogic::~vtkSlicerDRRGeneratorLogic() {}
 
 //----------------------------------------------------------------------------
 void vtkSlicerDRRGeneratorLogic::PrintSelf(ostream& os, vtkIndent indent)
@@ -49,7 +45,7 @@ void vtkSlicerDRRGeneratorLogic::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerDRRGeneratorLogic::SetMRMLSceneInternal(vtkMRMLScene * newScene)
+void vtkSlicerDRRGeneratorLogic::SetMRMLSceneInternal(vtkMRMLScene* newScene)
 {
   vtkNew<vtkIntArray> events;
   events->InsertNextValue(vtkMRMLScene::NodeAddedEvent);
@@ -71,13 +67,7 @@ void vtkSlicerDRRGeneratorLogic::UpdateFromMRMLScene()
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerDRRGeneratorLogic
-::OnMRMLSceneNodeAdded(vtkMRMLNode* vtkNotUsed(node))
-{
-}
+void vtkSlicerDRRGeneratorLogic ::OnMRMLSceneNodeAdded(vtkMRMLNode* vtkNotUsed(node)) {}
 
 //---------------------------------------------------------------------------
-void vtkSlicerDRRGeneratorLogic
-::OnMRMLSceneNodeRemoved(vtkMRMLNode* vtkNotUsed(node))
-{
-}
+void vtkSlicerDRRGeneratorLogic ::OnMRMLSceneNodeRemoved(vtkMRMLNode* vtkNotUsed(node)) {}

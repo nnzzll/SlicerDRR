@@ -24,9 +24,9 @@
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class qSlicerDRRGeneratorModuleWidgetPrivate: public Ui_qSlicerDRRGeneratorModuleWidget
+class qSlicerDRRGeneratorModuleWidgetPrivate : public Ui_qSlicerDRRGeneratorModuleWidget
 {
-public:
+ public:
   qSlicerDRRGeneratorModuleWidgetPrivate();
 };
 
@@ -34,24 +34,19 @@ public:
 // qSlicerDRRGeneratorModuleWidgetPrivate methods
 
 //-----------------------------------------------------------------------------
-qSlicerDRRGeneratorModuleWidgetPrivate::qSlicerDRRGeneratorModuleWidgetPrivate()
-{
-}
+qSlicerDRRGeneratorModuleWidgetPrivate::qSlicerDRRGeneratorModuleWidgetPrivate() {}
 
 //-----------------------------------------------------------------------------
 // qSlicerDRRGeneratorModuleWidget methods
 
 //-----------------------------------------------------------------------------
 qSlicerDRRGeneratorModuleWidget::qSlicerDRRGeneratorModuleWidget(QWidget* _parent)
-  : Superclass( _parent )
-  , d_ptr( new qSlicerDRRGeneratorModuleWidgetPrivate )
+    : Superclass(_parent), d_ptr(new qSlicerDRRGeneratorModuleWidgetPrivate)
 {
 }
 
 //-----------------------------------------------------------------------------
-qSlicerDRRGeneratorModuleWidget::~qSlicerDRRGeneratorModuleWidget()
-{
-}
+qSlicerDRRGeneratorModuleWidget::~qSlicerDRRGeneratorModuleWidget() {}
 
 //-----------------------------------------------------------------------------
 void qSlicerDRRGeneratorModuleWidget::setup()

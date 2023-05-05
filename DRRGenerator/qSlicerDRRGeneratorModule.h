@@ -26,49 +26,45 @@
 class qSlicerDRRGeneratorModulePrivate;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT
-qSlicerDRRGeneratorModule
-  : public qSlicerLoadableModule
+class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModule
+    : public qSlicerLoadableModule
 {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "org.slicer.modules.loadable.qSlicerLoadableModule/1.0");
   Q_INTERFACES(qSlicerLoadableModule);
 
-public:
-
+ public:
   typedef qSlicerLoadableModule Superclass;
-  explicit qSlicerDRRGeneratorModule(QObject *parent=nullptr);
+  explicit qSlicerDRRGeneratorModule(QObject* parent = nullptr);
   ~qSlicerDRRGeneratorModule() override;
 
   qSlicerGetTitleMacro(QTMODULE_TITLE);
 
-  QString helpText()const override;
-  QString acknowledgementText()const override;
-  QStringList contributors()const override;
+  QString helpText() const override;
+  QString acknowledgementText() const override;
+  QStringList contributors() const override;
 
-  QIcon icon()const override;
+  QIcon icon() const override;
 
-  QStringList categories()const override;
+  QStringList categories() const override;
   QStringList dependencies() const override;
 
-protected:
-
+ protected:
   /// Initialize the module. Register the volumes reader/writer
   void setup() override;
 
   /// Create and return the widget representation associated to this module
-  qSlicerAbstractModuleRepresentation * createWidgetRepresentation() override;
+  qSlicerAbstractModuleRepresentation* createWidgetRepresentation() override;
 
   /// Create and return the logic associated to this module
   vtkMRMLAbstractLogic* createLogic() override;
 
-protected:
+ protected:
   QScopedPointer<qSlicerDRRGeneratorModulePrivate> d_ptr;
 
-private:
+ private:
   Q_DECLARE_PRIVATE(qSlicerDRRGeneratorModule);
   Q_DISABLE_COPY(qSlicerDRRGeneratorModule);
-
 };
 
 #endif

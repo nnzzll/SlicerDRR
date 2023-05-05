@@ -30,21 +30,20 @@
 class qSlicerDRRGeneratorFooBarWidgetPrivate;
 
 /// \ingroup Slicer_QtModules_DRRGenerator
-class Q_SLICER_MODULE_DRRGENERATOR_WIDGETS_EXPORT qSlicerDRRGeneratorFooBarWidget
-  : public QWidget
+class Q_SLICER_MODULE_DRRGENERATOR_WIDGETS_EXPORT qSlicerDRRGeneratorFooBarWidget : public QWidget
 {
   Q_OBJECT
-public:
+ public:
   typedef QWidget Superclass;
-  qSlicerDRRGeneratorFooBarWidget(QWidget *parent=0);
+  qSlicerDRRGeneratorFooBarWidget(QWidget *parent = 0);
   ~qSlicerDRRGeneratorFooBarWidget() override;
 
-protected slots:
+ protected slots:
 
-protected:
+ protected:
   QScopedPointer<qSlicerDRRGeneratorFooBarWidgetPrivate> d_ptr;
 
-private:
+ private:
   Q_DECLARE_PRIVATE(qSlicerDRRGeneratorFooBarWidget);
   Q_DISABLE_COPY(qSlicerDRRGeneratorFooBarWidget);
 };

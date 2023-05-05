@@ -26,7 +26,7 @@
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class qSlicerDRRGeneratorModulePrivate
 {
-public:
+ public:
   qSlicerDRRGeneratorModulePrivate();
 };
 
@@ -34,24 +34,19 @@ public:
 // qSlicerDRRGeneratorModulePrivate methods
 
 //-----------------------------------------------------------------------------
-qSlicerDRRGeneratorModulePrivate::qSlicerDRRGeneratorModulePrivate()
-{
-}
+qSlicerDRRGeneratorModulePrivate::qSlicerDRRGeneratorModulePrivate() {}
 
 //-----------------------------------------------------------------------------
 // qSlicerDRRGeneratorModule methods
 
 //-----------------------------------------------------------------------------
 qSlicerDRRGeneratorModule::qSlicerDRRGeneratorModule(QObject* _parent)
-  : Superclass(_parent)
-  , d_ptr(new qSlicerDRRGeneratorModulePrivate)
+    : Superclass(_parent), d_ptr(new qSlicerDRRGeneratorModulePrivate)
 {
 }
 
 //-----------------------------------------------------------------------------
-qSlicerDRRGeneratorModule::~qSlicerDRRGeneratorModule()
-{
-}
+qSlicerDRRGeneratorModule::~qSlicerDRRGeneratorModule() {}
 
 //-----------------------------------------------------------------------------
 QString qSlicerDRRGeneratorModule::helpText() const
@@ -98,8 +93,7 @@ void qSlicerDRRGeneratorModule::setup()
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleRepresentation* qSlicerDRRGeneratorModule
-::createWidgetRepresentation()
+qSlicerAbstractModuleRepresentation* qSlicerDRRGeneratorModule ::createWidgetRepresentation()
 {
   return new qSlicerDRRGeneratorModuleWidget;
 }

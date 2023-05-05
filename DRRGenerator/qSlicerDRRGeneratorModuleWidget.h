@@ -27,26 +27,24 @@ class qSlicerDRRGeneratorModuleWidgetPrivate;
 class vtkMRMLNode;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget :
-  public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget
+    : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
-public:
-
+ public:
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerDRRGeneratorModuleWidget(QWidget *parent=0);
+  qSlicerDRRGeneratorModuleWidget(QWidget *parent = 0);
   virtual ~qSlicerDRRGeneratorModuleWidget();
 
-public slots:
+ public slots:
 
-
-protected:
+ protected:
   QScopedPointer<qSlicerDRRGeneratorModuleWidgetPrivate> d_ptr;
 
   void setup() override;
 
-private:
+ private:
   Q_DECLARE_PRIVATE(qSlicerDRRGeneratorModuleWidget);
   Q_DISABLE_COPY(qSlicerDRRGeneratorModuleWidget);
 };

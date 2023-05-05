@@ -20,7 +20,6 @@
 // This class manages the logic associated with reading, saving,
 // and changing propertied of the volumes
 
-
 #ifndef __vtkSlicerDRRGeneratorLogic_h
 #define __vtkSlicerDRRGeneratorLogic_h
 
@@ -34,31 +33,30 @@
 
 #include "vtkSlicerDRRGeneratorModuleLogicExport.h"
 
-
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic :
-  public vtkSlicerModuleLogic
+class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
+    : public vtkSlicerModuleLogic
 {
-public:
-
-  static vtkSlicerDRRGeneratorLogic *New();
+ public:
+  static vtkSlicerDRRGeneratorLogic* New();
   vtkTypeMacro(vtkSlicerDRRGeneratorLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-protected:
+ protected:
   vtkSlicerDRRGeneratorLogic();
   ~vtkSlicerDRRGeneratorLogic() override;
 
   void SetMRMLSceneInternal(vtkMRMLScene* newScene) override;
-  /// Register MRML Node classes to Scene. Gets called automatically when the MRMLScene is attached to this logic class.
+  /// Register MRML Node classes to Scene. Gets called automatically when the MRMLScene is attached
+  /// to this logic class.
   void RegisterNodes() override;
   void UpdateFromMRMLScene() override;
   void OnMRMLSceneNodeAdded(vtkMRMLNode* node) override;
   void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) override;
-private:
 
-  vtkSlicerDRRGeneratorLogic(const vtkSlicerDRRGeneratorLogic&); // Not implemented
-  void operator=(const vtkSlicerDRRGeneratorLogic&); // Not implemented
+ private:
+  vtkSlicerDRRGeneratorLogic(const vtkSlicerDRRGeneratorLogic&);  // Not implemented
+  void operator=(const vtkSlicerDRRGeneratorLogic&);              // Not implemented
 };
 
 #endif
