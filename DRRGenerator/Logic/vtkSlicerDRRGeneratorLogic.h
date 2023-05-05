@@ -25,11 +25,11 @@
 
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
-
 // MRML includes
 
 // STD includes
 #include <cstdlib>
+#include <string>
 
 #include "vtkSlicerDRRGeneratorModuleLogicExport.h"
 
@@ -41,6 +41,9 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
   static vtkSlicerDRRGeneratorLogic* New();
   vtkTypeMacro(vtkSlicerDRRGeneratorLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
+
+  template <typename NodeType>
+  static NodeType* getNodeByName(const std::string& nodeName, bool createIfNotExists = false);
 
  protected:
   vtkSlicerDRRGeneratorLogic();
@@ -59,4 +62,5 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
   void operator=(const vtkSlicerDRRGeneratorLogic&);              // Not implemented
 };
 
+#include "vtkSlicerDRRGeneratorLogic.hxx"
 #endif

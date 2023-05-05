@@ -37,7 +37,12 @@ class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget
   qSlicerDRRGeneratorModuleWidget(QWidget *parent = 0);
   virtual ~qSlicerDRRGeneratorModuleWidget();
 
+  void enter() override;
+  void exit() override;
+
  public slots:
+  void onApplyDRR();
+  void onDRRNodeAdded(vtkMRMLNode *);
 
  protected:
   QScopedPointer<qSlicerDRRGeneratorModuleWidgetPrivate> d_ptr;

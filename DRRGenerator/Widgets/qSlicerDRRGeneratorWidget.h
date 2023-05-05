@@ -18,8 +18,8 @@
 
 ==============================================================================*/
 
-#ifndef __qSlicerDRRGeneratorFooBarWidget_h
-#define __qSlicerDRRGeneratorFooBarWidget_h
+#ifndef __qSlicerDRRGeneratorWidget_h
+#define __qSlicerDRRGeneratorWidget_h
 
 // Qt includes
 #include <QWidget>
@@ -27,25 +27,25 @@
 // FooBar Widgets includes
 #include "qSlicerDRRGeneratorModuleWidgetsExport.h"
 
-class qSlicerDRRGeneratorFooBarWidgetPrivate;
+class qSlicerDRRGeneratorWidgetPrivate;
 
 /// \ingroup Slicer_QtModules_DRRGenerator
-class Q_SLICER_MODULE_DRRGENERATOR_WIDGETS_EXPORT qSlicerDRRGeneratorFooBarWidget : public QWidget
+class Q_SLICER_MODULE_DRRGENERATOR_WIDGETS_EXPORT qSlicerDRRGeneratorWidget : public QWidget
 {
   Q_OBJECT
  public:
   typedef QWidget Superclass;
-  qSlicerDRRGeneratorFooBarWidget(QWidget *parent = 0);
-  ~qSlicerDRRGeneratorFooBarWidget() override;
+  qSlicerDRRGeneratorWidget(QWidget *parent = 0);
+  ~qSlicerDRRGeneratorWidget() override;
 
  protected slots:
 
  protected:
-  QScopedPointer<qSlicerDRRGeneratorFooBarWidgetPrivate> d_ptr;
+  QScopedPointer<qSlicerDRRGeneratorWidgetPrivate> d_ptr;
 
  private:
-  Q_DECLARE_PRIVATE(qSlicerDRRGeneratorFooBarWidget);
-  Q_DISABLE_COPY(qSlicerDRRGeneratorFooBarWidget);
+  Q_DECLARE_PRIVATE(qSlicerDRRGeneratorWidget);
+  Q_DISABLE_COPY(qSlicerDRRGeneratorWidget);
 };
 
 #endif

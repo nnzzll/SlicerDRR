@@ -2,7 +2,7 @@
 
   Program: 3D Slicer
 
-  Portions (c) Copyright Brigham and Women's Hospital (BWH) All Rights Reserved.
+  Copyright (c) Kitware Inc.
 
   See COPYRIGHT.txt
   or http://www.slicer.org/copyright/copyright.txt for details.
@@ -13,47 +13,45 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
+  This file was originally developed by Jean-Christophe Fillion-Robin, Kitware Inc.
+  and was partially funded by NIH grant 3P41RR013218-12S1
+
 ==============================================================================*/
-#include <vector>
+// Slicer includes
+#include <qSlicerApplication.h>
+#include <vtkMRMLScene.h>
+
+// Widgets includes
+#include <qMRMLNodeComboBox.h>
+#include "qSlicerDRRGeneratorWidget.h"
 
 // ctk includes
 #include <ctkCollapsibleButton.h>
 #include <ctkSliderWidget.h>
 
-// vtk
-#include <vtkSlicerDRRGeneratorLogic.h>
-
-// MRML
-#include <vtkMRMLNode.h>
-#include <vtkMRMLScalarVolumeNode.h>
-#include <vtkMRMLScene.h>
-
 // Qt includes
 #include <QDebug>
 #include <QFormLayout>
-#include <QObject>
 #include <QPushButton>
 #include <QString>
 #include <QStringList>
 
-// Slicer includes
-#include <qMRMLNodeComboBox.h>
-#include <qSlicerApplication.h>
-#include "qSlicerDRRGeneratorModuleWidget.h"
-#include "qSlicerWidget.h"
-
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class qSlicerDRRGeneratorModuleWidgetPrivate
+/// \ingroup Slicer_QtModules_DRRGenerator
+class qSlicerDRRGeneratorWidgetPrivate
 {
-  Q_DECLARE_PUBLIC(qSlicerDRRGeneratorModuleWidget)
+  Q_DECLARE_PUBLIC(qSlicerDRRGeneratorWidget);
+
+ protected:
+  qSlicerDRRGeneratorWidget* const q_ptr;
 
  public:
-  QVBoxLayout* verticalLayout;
+  qSlicerDRRGeneratorWidgetPrivate(qSlicerDRRGeneratorWidget& object);
+  void setupUi(qSlicerDRRGeneratorWidget*);
+
   ctkCollapsibleButton* drrCollapsibleButton;
   QFormLayout* drrFormLayout;
   qMRMLNodeComboBox* volumeSelector;
-  qMRMLNodeComboBox* drrSelector;
   qMRMLNodeComboBox* pointSelector;
   ctkSliderWidget* angleSlider;
   ctkSliderWidget* rxSlider;
@@ -67,38 +65,19 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   ctkSliderWidget* sizeSlider;
   ctkSliderWidget* spacingSlider;
   QPushButton* applyButton;
-
-  qSlicerDRRGeneratorModuleWidgetPrivate(qSlicerDRRGeneratorModuleWidget& object);
-  void onEnterConnection();
-  void onExitConnection();
-  void setupUi(qSlicerWidget* qSlicerDRRGeneratorModuleWidget);
-  vtkSlicerDRRGeneratorLogic* logic() const;
-
- private:
-  std::vector<QMetaObject::Connection> connects;
-
- protected:
-  qSlicerDRRGeneratorModuleWidget* const q_ptr;
 };
 
-qSlicerDRRGeneratorModuleWidgetPrivate::qSlicerDRRGeneratorModuleWidgetPrivate(
-    qSlicerDRRGeneratorModuleWidget& object)
+// --------------------------------------------------------------------------
+qSlicerDRRGeneratorWidgetPrivate ::qSlicerDRRGeneratorWidgetPrivate(
+    qSlicerDRRGeneratorWidget& object)
     : q_ptr(&object)
 {
 }
 
-void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGeneratorModuleWidget)
+// --------------------------------------------------------------------------
+void qSlicerDRRGeneratorWidgetPrivate ::setupUi(qSlicerDRRGeneratorWidget* widget)
 {
-  if (qSlicerDRRGeneratorModuleWidget->objectName().isEmpty())
-    qSlicerDRRGeneratorModuleWidget->setObjectName(
-        QString::fromUtf8("qSlicerDRRGeneratorModuleWidget"));
-  qSlicerDRRGeneratorModuleWidget->resize(525, 319);
-  verticalLayout = new QVBoxLayout(qSlicerDRRGeneratorModuleWidget);
-  verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
-
-  drrCollapsibleButton = new ctkCollapsibleButton("DRR Generation");
-  verticalLayout->addWidget(drrCollapsibleButton);
-
+  drrCollapsibleButton = new ctkCollapsibleButton("DRR Generation", widget);
   drrFormLayout = new QFormLayout(drrCollapsibleButton);
   // input volume selector
   volumeSelector = new qMRMLNodeComboBox;
@@ -110,19 +89,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   volumeSelector->setShowChildNodeTypes(false);
   volumeSelector->setMRMLScene(qSlicerApplication::application()->mrmlScene());
   volumeSelector->setToolTip("Select the CT Volume");
-  drrFormLayout->addRow("CT Volume: ", volumeSelector);
-
-  // drr selector
-  drrSelector = new qMRMLNodeComboBox;
-  drrSelector->setNodeTypes(QStringList("vtkMRMLScalarVolumeNode"));
-  drrSelector->setAddEnabled(true);
-  drrSelector->setRemoveEnabled(true);
-  drrSelector->setNoneEnabled(false);
-  drrSelector->setShowHidden(false);
-  drrSelector->setShowChildNodeTypes(false);
-  drrSelector->setMRMLScene(qSlicerApplication::application()->mrmlScene());
-  drrSelector->setToolTip("Select the CT Volume");
-  drrFormLayout->addRow("DRR: ", drrSelector);
+  drrFormLayout->addRow("CT Volume", volumeSelector);
 
   // registration point selector
   pointSelector = new qMRMLNodeComboBox;
@@ -203,8 +170,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   scdSlider = new ctkSliderWidget;
   scdSlider->setSingleStep(0.5);
   scdSlider->setDecimals(1);
-  scdSlider->setMinimum(100);
-  scdSlider->setMaximum(1500);
+  scdSlider->setMinimum(-90);
+  scdSlider->setMaximum(90);
   scdSlider->setValue(1000);
   scdSlider->setSuffix(" mm");
   drrFormLayout->addRow("Souce To Isocenter: ", scdSlider);
@@ -220,7 +187,6 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
 
   sizeSlider = new ctkSliderWidget;
   sizeSlider->setSingleStep(64);
-  sizeSlider->setDecimals(0);
   sizeSlider->setMinimum(128);
   sizeSlider->setMaximum(1024);
   sizeSlider->setValue(256);
@@ -239,61 +205,16 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrFormLayout->addRow(applyButton);
 }
 
-void qSlicerDRRGeneratorModuleWidgetPrivate::onEnterConnection()
-{
-  Q_Q(qSlicerDRRGeneratorModuleWidget);
-  connects.push_back(QObject::connect(applyButton, SIGNAL(clicked(bool)), q, SLOT(onApplyDRR())));
-  connects.push_back(QObject::connect(drrSelector, SIGNAL(nodeAdded(vtkMRMLNode*)), q,
-                                      SLOT(onDRRNodeAdded(vtkMRMLNode*))));
-}
+//-----------------------------------------------------------------------------
+// qSlicerDRRGeneratorWidget methods
 
-void qSlicerDRRGeneratorModuleWidgetPrivate::onExitConnection()
+//-----------------------------------------------------------------------------
+qSlicerDRRGeneratorWidget ::qSlicerDRRGeneratorWidget(QWidget* parentWidget)
+    : Superclass(parentWidget), d_ptr(new qSlicerDRRGeneratorWidgetPrivate(*this))
 {
-  Q_Q(qSlicerDRRGeneratorModuleWidget);
-  for (auto& connection : connects) QObject::disconnect(connection);
-  connects.clear();
-}
-
-vtkSlicerDRRGeneratorLogic* qSlicerDRRGeneratorModuleWidgetPrivate::logic() const
-{
-  Q_Q(const qSlicerDRRGeneratorModuleWidget);
-  return vtkSlicerDRRGeneratorLogic::SafeDownCast(q->logic());
-}
-
-qSlicerDRRGeneratorModuleWidget::qSlicerDRRGeneratorModuleWidget(QWidget* _parent)
-    : Superclass(_parent), d_ptr(new qSlicerDRRGeneratorModuleWidgetPrivate(*this))
-{
-}
-
-qSlicerDRRGeneratorModuleWidget::~qSlicerDRRGeneratorModuleWidget() {}
-
-void qSlicerDRRGeneratorModuleWidget::setup()
-{
-  Q_D(qSlicerDRRGeneratorModuleWidget);
+  Q_D(qSlicerDRRGeneratorWidget);
   d->setupUi(this);
-  this->Superclass::setup();
 }
 
-void qSlicerDRRGeneratorModuleWidget::enter()
-{
-  Q_D(qSlicerDRRGeneratorModuleWidget);
-  d->onEnterConnection();
-}
-
-void qSlicerDRRGeneratorModuleWidget::exit()
-{
-  Q_D(qSlicerDRRGeneratorModuleWidget);
-  d->onExitConnection();
-}
-
-void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
-{
-  Q_D(qSlicerDRRGeneratorModuleWidget);
-  qDebug() << __FUNCTION__ << " clicked!";
-}
-
-void qSlicerDRRGeneratorModuleWidget::onDRRNodeAdded(vtkMRMLNode* node)
-{
-  Q_D(qSlicerDRRGeneratorModuleWidget);
-  qDebug() << __FUNCTION__ << " clicked!";
-}
+//-----------------------------------------------------------------------------
+qSlicerDRRGeneratorWidget ::~qSlicerDRRGeneratorWidget() {}
