@@ -14,7 +14,7 @@ set(EXTENSION_DEPENDS "NA") # Specified as a list or "NA" if no dependencies
 
 #-----------------------------------------------------------------------------
 # Extension dependencies
-set(Slicer_DIR /home/nzl/Slicer-SuperBuild-Debug/Slicer-build)
+set(Slicer_DIR /home/nzl/Slicer5.0.3-Release/Slicer-build)
 find_package(Slicer REQUIRED)
 include(${Slicer_USE_FILE})
 

@@ -31,3 +31,25 @@ inline NodeType* vtkSlicerDRRGeneratorLogic::getNodeByName(const std::string& no
       return nullptr;
   }
 }
+
+template <typename NodeType>
+inline NodeType* vtkSlicerDRRGeneratorLogic::getNodeByID(const std::string& nodeID)
+{
+  if (nodeID.empty())
+  {
+    std::cout << __FUNCTION__ << ": nodeID empty." << std::endl;
+    return nullptr;
+  }
+
+  auto mrmlScene = qSlicerApplication::application()->mrmlScene();
+  auto node = mrmlScene->GetNodeByID(nodeID);
+  if (node)
+  {
+    return NodeType::SafeDownCast(node);
+  }
+  else
+  {
+    std::cout << __FUNCTION__ << ": node ID \"" << nodeID << "\" is not found." << std::endl;
+    return nullptr;
+  }
+}

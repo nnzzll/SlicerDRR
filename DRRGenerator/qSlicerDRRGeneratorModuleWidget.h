@@ -42,7 +42,8 @@ class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget
 
  public slots:
   void onApplyDRR();
-  void onDRRNodeAdded(vtkMRMLNode *);
+  void onOpacityChanged(double);
+  void onXRaySelected(vtkMRMLNode *);
 
  protected:
   QScopedPointer<qSlicerDRRGeneratorModuleWidgetPrivate> d_ptr;

@@ -15,18 +15,21 @@
 
 ==============================================================================*/
 #include <vector>
-
+#include "DRRGenerator.h"
 // ctk includes
 #include <ctkCollapsibleButton.h>
 #include <ctkSliderWidget.h>
 
 // vtk
+#include <vtkMatrix4x4.h>
+#include <vtkNew.h>
 #include <vtkSlicerDRRGeneratorLogic.h>
 
 // MRML
 #include <vtkMRMLNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLScene.h>
+#include <vtkMRMLSliceCompositeNode.h>
 
 // Qt includes
 #include <QDebug>
@@ -54,6 +57,7 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   QFormLayout* drrFormLayout;
   qMRMLNodeComboBox* volumeSelector;
   qMRMLNodeComboBox* drrSelector;
+  qMRMLNodeComboBox* xraySelector;
   qMRMLNodeComboBox* pointSelector;
   ctkSliderWidget* angleSlider;
   ctkSliderWidget* rxSlider;
@@ -66,7 +70,10 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   ctkSliderWidget* thSlider;
   ctkSliderWidget* sizeSlider;
   ctkSliderWidget* spacingSlider;
+  ctkSliderWidget* opacitySlider;
   QPushButton* applyButton;
+  double drrNodeOrigin[3]{0., 0., 0.};
+  double drrNodeSpacing[3]{1.0, 1.0, 1.0};
 
   qSlicerDRRGeneratorModuleWidgetPrivate(qSlicerDRRGeneratorModuleWidget& object);
   void onEnterConnection();
@@ -81,8 +88,7 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   qSlicerDRRGeneratorModuleWidget* const q_ptr;
 };
 
-qSlicerDRRGeneratorModuleWidgetPrivate::qSlicerDRRGeneratorModuleWidgetPrivate(
-    qSlicerDRRGeneratorModuleWidget& object)
+qSlicerDRRGeneratorModuleWidgetPrivate::qSlicerDRRGeneratorModuleWidgetPrivate(qSlicerDRRGeneratorModuleWidget& object)
     : q_ptr(&object)
 {
 }
@@ -90,8 +96,7 @@ qSlicerDRRGeneratorModuleWidgetPrivate::qSlicerDRRGeneratorModuleWidgetPrivate(
 void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGeneratorModuleWidget)
 {
   if (qSlicerDRRGeneratorModuleWidget->objectName().isEmpty())
-    qSlicerDRRGeneratorModuleWidget->setObjectName(
-        QString::fromUtf8("qSlicerDRRGeneratorModuleWidget"));
+    qSlicerDRRGeneratorModuleWidget->setObjectName(QString::fromUtf8("qSlicerDRRGeneratorModuleWidget"));
   qSlicerDRRGeneratorModuleWidget->resize(525, 319);
   verticalLayout = new QVBoxLayout(qSlicerDRRGeneratorModuleWidget);
   verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
@@ -123,6 +128,18 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrSelector->setMRMLScene(qSlicerApplication::application()->mrmlScene());
   drrSelector->setToolTip("Select the CT Volume");
   drrFormLayout->addRow("DRR: ", drrSelector);
+
+  // background xray selector
+  xraySelector = new qMRMLNodeComboBox;
+  xraySelector->setNodeTypes(QStringList("vtkMRMLScalarVolumeNode"));
+  xraySelector->setAddEnabled(false);
+  xraySelector->setRemoveEnabled(false);
+  xraySelector->setNoneEnabled(true);
+  xraySelector->setShowHidden(false);
+  xraySelector->setShowChildNodeTypes(false);
+  xraySelector->setMRMLScene(qSlicerApplication::application()->mrmlScene());
+  xraySelector->setToolTip("Select the XRay");
+  drrFormLayout->addRow("XRay: ", xraySelector);
 
   // registration point selector
   pointSelector = new qMRMLNodeComboBox;
@@ -215,7 +232,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   thSlider->setMinimum(-1024);
   thSlider->setMaximum(1024);
   thSlider->setValue(0);
-  thSlider->setSuffix(" mm");
+  thSlider->setSuffix(" Hu");
   drrFormLayout->addRow("Threshold: ", thSlider);
 
   sizeSlider = new ctkSliderWidget;
@@ -227,13 +244,21 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrFormLayout->addRow("DRR Size: ", sizeSlider);
 
   spacingSlider = new ctkSliderWidget;
-  spacingSlider->setSingleStep(0.1);
-  spacingSlider->setDecimals(1);
+  spacingSlider->setSingleStep(0.01);
+  spacingSlider->setDecimals(2);
   spacingSlider->setMinimum(0.1);
   spacingSlider->setMaximum(5.0);
   spacingSlider->setValue(1.0);
   spacingSlider->setSuffix(" mm");
   drrFormLayout->addRow("DRR Spacing: ", spacingSlider);
+
+  opacitySlider = new ctkSliderWidget;
+  opacitySlider->setSingleStep(0.01);
+  opacitySlider->setDecimals(2);
+  opacitySlider->setMinimum(0);
+  opacitySlider->setMaximum(1.0);
+  opacitySlider->setValue(0.5);
+  drrFormLayout->addRow("DRR Opacity: ", opacitySlider);
 
   applyButton = new QPushButton("Apply");
   drrFormLayout->addRow(applyButton);
@@ -243,8 +268,20 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::onEnterConnection()
 {
   Q_Q(qSlicerDRRGeneratorModuleWidget);
   connects.push_back(QObject::connect(applyButton, SIGNAL(clicked(bool)), q, SLOT(onApplyDRR())));
-  connects.push_back(QObject::connect(drrSelector, SIGNAL(nodeAdded(vtkMRMLNode*)), q,
-                                      SLOT(onDRRNodeAdded(vtkMRMLNode*))));
+  connects.push_back(QObject::connect(angleSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(rxSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(rySlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(rzSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(txSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(tySlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(tzSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(tzSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(thSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(spacingSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(sizeSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(opacitySlider, SIGNAL(valueChanged(double)), q, SLOT(onOpacityChanged(double))));
+  connects.push_back(
+      QObject::connect(xraySelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(onXRaySelected(vtkMRMLNode*))));
 }
 
 void qSlicerDRRGeneratorModuleWidgetPrivate::onExitConnection()
@@ -289,11 +326,44 @@ void qSlicerDRRGeneratorModuleWidget::exit()
 void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
 {
   Q_D(qSlicerDRRGeneratorModuleWidget);
-  qDebug() << __FUNCTION__ << " clicked!";
+  vtkMRMLScalarVolumeNode* volumeNode = vtkMRMLScalarVolumeNode::SafeDownCast(d->volumeSelector->currentNode());
+  vtkMRMLScalarVolumeNode* drrNode = vtkMRMLScalarVolumeNode::SafeDownCast(d->drrSelector->currentNode());
+  double rotation[3] = {d->rxSlider->value(), d->rySlider->value(), d->rzSlider->value()};
+  double translation[3] = {d->txSlider->value(), d->tySlider->value(), d->tzSlider->value()};
+  double threshold = d->thSlider->value();
+  int size[3] = {(int)d->sizeSlider->value(), (int)d->sizeSlider->value(), 1};
+  double spacing[3] = {d->spacingSlider->value(), d->spacingSlider->value(), 1};
+  double scd = d->scdSlider->value();
+  double angle = d->angleSlider->value();
+  d->logic()->applyDRR(volumeNode, drrNode, angle, threshold, scd, rotation, translation, size, spacing);
+  vtkNew<vtkMatrix4x4> IJKToRASDirectionMatrix;
+  volumeNode->GetIJKToRASDirectionMatrix(IJKToRASDirectionMatrix);
+  drrNode->SetIJKToRASDirectionMatrix(IJKToRASDirectionMatrix);
+  drrNode->SetOrigin(d->drrNodeOrigin);
+  drrNode->SetSpacing(d->drrNodeSpacing);
+
+  // Show output
+  // selectionNode = slicer.app.applicationLogic().GetSelectionNode()
+  // selectionNode.SetReferenceActiveVolumeID(outputVolume.GetID())
+  // slicer.app.applicationLogic().PropagateVolumeSelection(1)
+  auto compositeNode = d->logic()->getNodeByID<vtkMRMLSliceCompositeNode>("vtkMRMLSliceCompositeNodeRed");
+  compositeNode->SetForegroundVolumeID(drrNode->GetID());
+  compositeNode->SetForegroundOpacity(d->opacitySlider->value());
 }
 
-void qSlicerDRRGeneratorModuleWidget::onDRRNodeAdded(vtkMRMLNode* node)
+void qSlicerDRRGeneratorModuleWidget::onXRaySelected(vtkMRMLNode* node)
 {
   Q_D(qSlicerDRRGeneratorModuleWidget);
-  qDebug() << __FUNCTION__ << " clicked!";
+  auto xrayNode = vtkMRMLScalarVolumeNode::SafeDownCast(node);
+  auto compositeNode = d->logic()->getNodeByID<vtkMRMLSliceCompositeNode>("vtkMRMLSliceCompositeNodeRed");
+  compositeNode->SetBackgroundVolumeID(xrayNode->GetID());
+  xrayNode->GetSpacing(d->drrNodeSpacing);
+  xrayNode->GetOrigin(d->drrNodeOrigin);
+}
+
+void qSlicerDRRGeneratorModuleWidget::onOpacityChanged(double value)
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  auto compositeNode = d->logic()->getNodeByID<vtkMRMLSliceCompositeNode>("vtkMRMLSliceCompositeNodeRed");
+  compositeNode->SetForegroundOpacity(value);
 }

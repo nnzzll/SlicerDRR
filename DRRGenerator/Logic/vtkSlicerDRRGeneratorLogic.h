@@ -32,6 +32,8 @@
 #include <string>
 
 #include "vtkSlicerDRRGeneratorModuleLogicExport.h"
+class DRRGenerator;
+class vtkMRMLScalarVolumeNode;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
@@ -44,6 +46,14 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
 
   template <typename NodeType>
   static NodeType* getNodeByName(const std::string& nodeName, bool createIfNotExists = false);
+
+  template <typename NodeType>
+  static NodeType* getNodeByID(const std::string& nodeID);
+
+  void applyDRR(vtkMRMLScalarVolumeNode*, vtkMRMLScalarVolumeNode*, double angle, double threshold,
+                double scd, double rotation[3], double translation[3], int size[3],
+                double spacing[3]);
+  std::shared_ptr<DRRGenerator> drrGen;
 
  protected:
   vtkSlicerDRRGeneratorLogic();

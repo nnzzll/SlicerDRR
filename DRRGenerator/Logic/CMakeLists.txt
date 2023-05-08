@@ -11,6 +11,9 @@ set(${KIT}_SRCS
   vtkSlicer${MODULE_NAME}Logic.cxx
   vtkSlicer${MODULE_NAME}Logic.h
   vtkSlicer${MODULE_NAME}Logic.hxx
+  DRRGenerator.cxx
+  DRRGenerator.h
+  DRRGeneratorMacro.h
   )
 
 set(${KIT}_TARGET_LIBRARIES
