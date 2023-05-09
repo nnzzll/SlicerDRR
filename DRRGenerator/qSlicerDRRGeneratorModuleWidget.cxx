@@ -277,6 +277,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::onEnterConnection()
   connects.push_back(QObject::connect(tzSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(tzSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(thSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(scdSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(spacingSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(sizeSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(opacitySlider, SIGNAL(valueChanged(double)), q, SLOT(onOpacityChanged(double))));
