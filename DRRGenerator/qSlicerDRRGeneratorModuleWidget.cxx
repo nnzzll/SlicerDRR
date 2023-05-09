@@ -21,6 +21,7 @@
 #include <ctkSliderWidget.h>
 
 // vtk
+#include <vtkImageData.h>
 #include <vtkMatrix4x4.h>
 #include <vtkNew.h>
 #include <vtkSlicerDRRGeneratorLogic.h>
@@ -74,6 +75,7 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   QPushButton* applyButton;
   double drrNodeOrigin[3]{0., 0., 0.};
   double drrNodeSpacing[3]{1.0, 1.0, 1.0};
+  int drrNodeSize[3]{256, 256, 1};
 
   qSlicerDRRGeneratorModuleWidgetPrivate(qSlicerDRRGeneratorModuleWidget& object);
   void onEnterConnection();
@@ -332,7 +334,16 @@ void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
   double rotation[3] = {d->rxSlider->value(), d->rySlider->value(), d->rzSlider->value()};
   double translation[3] = {d->txSlider->value(), d->tySlider->value(), d->tzSlider->value()};
   double threshold = d->thSlider->value();
-  int size[3] = {(int)d->sizeSlider->value(), (int)d->sizeSlider->value(), 1};
+  int size[3];
+  if (d->xraySelector->currentNode())
+  {
+    memcpy(size, d->drrNodeSize, 3 * sizeof(int));
+  }
+  else
+  {
+    size[0] = size[1] = (int)d->sizeSlider->value();
+    size[2] = 1;
+  }
   double spacing[3] = {d->spacingSlider->value(), d->spacingSlider->value(), 1};
   double scd = d->scdSlider->value();
   double angle = d->angleSlider->value();
@@ -357,9 +368,18 @@ void qSlicerDRRGeneratorModuleWidget::onXRaySelected(vtkMRMLNode* node)
   Q_D(qSlicerDRRGeneratorModuleWidget);
   auto xrayNode = vtkMRMLScalarVolumeNode::SafeDownCast(node);
   auto compositeNode = d->logic()->getNodeByID<vtkMRMLSliceCompositeNode>("vtkMRMLSliceCompositeNodeRed");
+  if (!node)
+  {
+    d->sizeSlider->setDisabled(false);
+    compositeNode->SetBackgroundVolumeID("");
+    return;
+  }
   compositeNode->SetBackgroundVolumeID(xrayNode->GetID());
   xrayNode->GetSpacing(d->drrNodeSpacing);
   xrayNode->GetOrigin(d->drrNodeOrigin);
+  xrayNode->GetImageData()->GetDimensions(d->drrNodeSize);
+  d->sizeSlider->setValue(d->drrNodeSize[0]);
+  d->sizeSlider->setDisabled(true);
 }
 
 void qSlicerDRRGeneratorModuleWidget::onOpacityChanged(double value)
