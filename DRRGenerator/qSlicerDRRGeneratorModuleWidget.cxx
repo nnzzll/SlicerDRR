@@ -27,6 +27,8 @@
 #include <vtkSlicerDRRGeneratorLogic.h>
 
 // MRML
+#include <vtkMRMLMarkupsFiducialDisplayNode.h>
+#include <vtkMRMLMarkupsFiducialNode.h>
 #include <vtkMRMLNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLScene.h>
@@ -361,6 +363,13 @@ void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
   auto compositeNode = d->logic()->getNodeByID<vtkMRMLSliceCompositeNode>("vtkMRMLSliceCompositeNodeRed");
   compositeNode->SetForegroundVolumeID(drrNode->GetID());
   compositeNode->SetForegroundOpacity(d->opacitySlider->value());
+
+  // 配准点的投影
+  auto pointNode = vtkMRMLMarkupsFiducialNode::SafeDownCast(d->pointSelector->currentNode());
+  if (!pointNode) return;
+  IJKVec ijkPoints;
+  d->logic()->getFiducialPosition(pointNode, ijkPoints);
+  this->displayRegistrationPoint(ijkPoints);
 }
 
 void qSlicerDRRGeneratorModuleWidget::onXRaySelected(vtkMRMLNode* node)
@@ -387,4 +396,27 @@ void qSlicerDRRGeneratorModuleWidget::onOpacityChanged(double value)
   Q_D(qSlicerDRRGeneratorModuleWidget);
   auto compositeNode = d->logic()->getNodeByID<vtkMRMLSliceCompositeNode>("vtkMRMLSliceCompositeNodeRed");
   compositeNode->SetForegroundOpacity(value);
+}
+
+void qSlicerDRRGeneratorModuleWidget::displayRegistrationPoint(IJKVec& ijkPoints)
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  auto registNode = d->logic()->getNodeByName<vtkMRMLMarkupsFiducialNode>("RegisterPoints1", true);
+  registNode->SetLocked(1);
+  auto displayNode = vtkMRMLMarkupsFiducialDisplayNode::SafeDownCast(registNode->GetDisplayNode());
+  displayNode->SetDisplayableOnlyInView("vtkMRMLSliceNodeRed");
+  displayNode->SetGlyphScale(1.0);
+  auto drrNode = vtkMRMLScalarVolumeNode::SafeDownCast(d->drrSelector->currentNode());
+  if (!drrNode) return;
+  vtkNew<vtkMatrix4x4> IJKToRAS;
+  drrNode->GetIJKToRASMatrix(IJKToRAS);
+  registNode->RemoveAllControlPoints();
+  double ijkPos[4]{0, 0, 0, 1}, rasPos[4]{0, 0, 0, 1};
+  for (size_t i = 0; i < ijkPoints.size(); i++)
+  {
+    ijkPos[0] = ijkPoints[i][0];
+    ijkPos[1] = ijkPoints[i][1];
+    IJKToRAS->MultiplyPoint(ijkPos, rasPos);
+    registNode->AddControlPoint(rasPos, std::to_string(i + 1));
+  }
 }

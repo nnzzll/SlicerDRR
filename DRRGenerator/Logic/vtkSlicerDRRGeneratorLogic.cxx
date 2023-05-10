@@ -20,6 +20,7 @@
 #include "DRRGenerator.h"
 
 // MRML includes
+#include <vtkMRMLMarkupsFiducialNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLScene.h>
 
@@ -104,4 +105,21 @@ void vtkSlicerDRRGeneratorLogic::applyDRR(vtkMRMLScalarVolumeNode* ctVolume,
                  std::chrono::system_clock::now().time_since_epoch())
                  .count();
   std::cout << "Time Used:" << end - begin << "ms" << std::endl;
+}
+
+void vtkSlicerDRRGeneratorLogic::getFiducialPosition(vtkMRMLMarkupsFiducialNode* pointNode,
+                                                     IJKVec& ijkPoints)
+{
+  double rasPos[3]{}, point3D[3]{}, point2D[2]{};
+  ijkPoints.clear();
+  for (int i = 0; i < pointNode->GetNumberOfControlPoints(); i++)
+  {
+    pointNode->GetNthControlPointPosition(i, rasPos);
+    // RAS -> LPS
+    point3D[0] = -rasPos[0];
+    point3D[1] = -rasPos[1];
+    point3D[2] = rasPos[2];
+    this->drrGen->GetFiducialPosition(point3D, point2D);
+    ijkPoints.push_back({point2D[0], point2D[1]});
+  }
 }

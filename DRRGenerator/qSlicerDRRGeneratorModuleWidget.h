@@ -21,6 +21,10 @@
 // Slicer includes
 #include "qSlicerAbstractModuleWidget.h"
 
+// STD includes
+#include <array>
+#include <vector>
+
 #include "qSlicerDRRGeneratorModuleExport.h"
 
 class qSlicerDRRGeneratorModuleWidgetPrivate;
@@ -37,6 +41,7 @@ class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget
   qSlicerDRRGeneratorModuleWidget(QWidget *parent = 0);
   virtual ~qSlicerDRRGeneratorModuleWidget();
 
+  typedef std::vector<std::array<double, 2>> IJKVec;
   void enter() override;
   void exit() override;
 
@@ -49,6 +54,7 @@ class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget
   QScopedPointer<qSlicerDRRGeneratorModuleWidgetPrivate> d_ptr;
 
   void setup() override;
+  void displayRegistrationPoint(IJKVec&);
 
  private:
   Q_DECLARE_PRIVATE(qSlicerDRRGeneratorModuleWidget);

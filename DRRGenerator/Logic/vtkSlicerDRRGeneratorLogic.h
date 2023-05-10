@@ -28,11 +28,14 @@
 // MRML includes
 
 // STD includes
+#include <array>
 #include <cstdlib>
 #include <string>
+#include <vector>
 
 #include "vtkSlicerDRRGeneratorModuleLogicExport.h"
 class DRRGenerator;
+class vtkMRMLMarkupsFiducialNode;
 class vtkMRMLScalarVolumeNode;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -44,6 +47,7 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
   vtkTypeMacro(vtkSlicerDRRGeneratorLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
+  typedef std::vector<std::array<double, 2>> IJKVec;
   template <typename NodeType>
   static NodeType* getNodeByName(const std::string& nodeName, bool createIfNotExists = false);
 
@@ -53,6 +57,7 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
   void applyDRR(vtkMRMLScalarVolumeNode*, vtkMRMLScalarVolumeNode*, double angle, double threshold,
                 double scd, double rotation[3], double translation[3], int size[3],
                 double spacing[3]);
+  void getFiducialPosition(vtkMRMLMarkupsFiducialNode*, IJKVec&);
   std::shared_ptr<DRRGenerator> drrGen;
 
  protected:
