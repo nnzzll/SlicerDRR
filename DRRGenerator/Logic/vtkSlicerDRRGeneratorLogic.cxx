@@ -107,18 +107,21 @@ void vtkSlicerDRRGeneratorLogic::applyDRR(vtkMRMLScalarVolumeNode* ctVolume,
   std::cout << "Time Used:" << end - begin << "ms" << std::endl;
 }
 
-void vtkSlicerDRRGeneratorLogic::getFiducialPosition(vtkMRMLMarkupsFiducialNode* pointNode,
+void vtkSlicerDRRGeneratorLogic::getFiducialPosition(vtkMRMLScalarVolumeNode* volumeNode,
+                                                     vtkMRMLMarkupsFiducialNode* pointNode,
                                                      IJKVec& ijkPoints)
 {
-  double rasPos[3]{}, point3D[3]{}, point2D[2]{};
+  double rasPos[3]{}, point3D[3]{}, point2D[2]{}, origin[3];
+  volumeNode->GetOrigin(origin);
   ijkPoints.clear();
   for (int i = 0; i < pointNode->GetNumberOfControlPoints(); i++)
   {
     pointNode->GetNthControlPointPosition(i, rasPos);
-    // RAS -> LPS
-    point3D[0] = -rasPos[0];
-    point3D[1] = -rasPos[1];
-    point3D[2] = rasPos[2];
+    // !RAS -> LPS 计算Camera2LPS时, 认为CT origin为0, 0, 0
+    // !但实际在CT上选点的时候origin时不为0的,所以要减掉
+    point3D[0] = -(rasPos[0] - origin[0]);
+    point3D[1] = -(rasPos[1] - origin[1]);
+    point3D[2] = rasPos[2] - origin[2];
     this->drrGen->GetFiducialPosition(point3D, point2D);
     ijkPoints.push_back({point2D[0], point2D[1]});
   }

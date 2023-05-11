@@ -57,7 +57,7 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
   void applyDRR(vtkMRMLScalarVolumeNode*, vtkMRMLScalarVolumeNode*, double angle, double threshold,
                 double scd, double rotation[3], double translation[3], int size[3],
                 double spacing[3]);
-  void getFiducialPosition(vtkMRMLMarkupsFiducialNode*, IJKVec&);
+  void getFiducialPosition(vtkMRMLScalarVolumeNode*, vtkMRMLMarkupsFiducialNode*, IJKVec&);
   std::shared_ptr<DRRGenerator> drrGen;
 
  protected:

@@ -368,7 +368,7 @@ void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
   auto pointNode = vtkMRMLMarkupsFiducialNode::SafeDownCast(d->pointSelector->currentNode());
   if (!pointNode) return;
   IJKVec ijkPoints;
-  d->logic()->getFiducialPosition(pointNode, ijkPoints);
+  d->logic()->getFiducialPosition(volumeNode, pointNode, ijkPoints);
   this->displayRegistrationPoint(ijkPoints);
 }
 
