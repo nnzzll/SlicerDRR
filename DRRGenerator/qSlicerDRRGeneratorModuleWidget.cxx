@@ -78,6 +78,7 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   ctkSliderWidget* spacingSlider;
   ctkSliderWidget* opacitySlider;
   QPushButton* applyButton;
+  QPushButton* resetButton;
   double drrNodeOrigin[3]{0., 0., 0.};
   double drrNodeSpacing[3]{1.0, 1.0, 1.0};
   int drrNodeSize[3]{256, 256, 1};
@@ -197,6 +198,9 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   rzSlider->setSuffix(" °");
   drrFormLayout->addRow("Rotation Z: ", rzSlider);
 
+  resetButton = new QPushButton("Reset Rotation");
+  drrFormLayout->addRow(resetButton);
+
   txSlider = new ctkSliderWidget;
   txSlider->setSingleStep(0.5);
   txSlider->setDecimals(1);
@@ -290,6 +294,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::onEnterConnection()
   connects.push_back(QObject::connect(opacitySlider, SIGNAL(valueChanged(double)), q, SLOT(onOpacityChanged(double))));
   connects.push_back(
       QObject::connect(xraySelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(onXRaySelected(vtkMRMLNode*))));
+  connects.push_back(QObject::connect(resetButton, SIGNAL(clicked(bool)), q, SLOT(onResetRotation())));
 }
 
 void qSlicerDRRGeneratorModuleWidgetPrivate::onExitConnection()
@@ -425,4 +430,16 @@ void qSlicerDRRGeneratorModuleWidget::displayRegistrationPoint(IJKVec& ijkPoints
     IJKToRAS->MultiplyPoint(ijkPos, rasPos);
     registNode->AddControlPoint(rasPos, std::to_string(i + 1));
   }
+}
+
+void qSlicerDRRGeneratorModuleWidget::onResetRotation()
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  d->onExitConnection();
+  d->rxSlider->setValue(0);
+  d->rySlider->setValue(0);
+  d->rzSlider->setValue(0);
+  d->logic()->resetDRRGenerator();
+  this->onApplyDRR();
+  d->onEnterConnection();
 }

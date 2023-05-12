@@ -126,3 +126,8 @@ void vtkSlicerDRRGeneratorLogic::getFiducialPosition(vtkMRMLScalarVolumeNode* vo
     ijkPoints.push_back({point2D[0], point2D[1]});
   }
 }
+
+void vtkSlicerDRRGeneratorLogic::resetDRRGenerator()
+{
+  this->drrGen->Reset();
+}

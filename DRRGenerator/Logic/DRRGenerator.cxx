@@ -340,11 +340,28 @@ void DRRGenerator::ComputeTransform()
 {
   Eigen::Matrix4d rx, ry, rz;
   Eigen::Vector4d translation;
-  Rx(m_Isocenter, m_Rotation[0], rx);
-  Ry(m_Isocenter, m_Rotation[1], ry);
-  Rz(m_Isocenter, m_Rotation[2], rz);
+  // ! 每一次旋转都是在当前的基础上沿自身的某个轴转动
+  // ! 因此可以避免万向锁的情况
+  double deltaRx = m_Rotation[0] - oldRotation[0];
+  double deltaRy = m_Rotation[1] - oldRotation[1];
+  double deltaRz = m_Rotation[2] - oldRotation[2];
+  memcpy(oldRotation, m_Rotation, 3 * sizeof(double));
+  Eigen::Matrix4d deltaR;
+  if (std::abs(deltaRx) > 1e-8)
+  {
+    Rx(m_Isocenter, deltaRx, deltaR);
+  }
+  else if (std::abs(deltaRy) > 1e-8)
+  {
+    Ry(m_Isocenter, deltaRy, deltaR);
+  }
+  else
+  {
+    Rz(m_Isocenter, deltaRz, deltaR);
+  }
   Eigen::Matrix4d volumeRot;
-  volumeRot = rz * ry * rx;
+  volumeRot = currentVolumeRot * deltaR;
+  currentVolumeRot = volumeRot;
   translation << m_Translation[0], m_Translation[1], m_Translation[2], 0;
   volumeRot.col(3) += translation;
 
@@ -502,4 +519,12 @@ vtkSmartPointer<vtkImageData> DRRGenerator::GetOutput()
   flipFilter->SetFilteredAxes(1);
   flipFilter->Update();
   return flipFilter->GetOutput();
+}
+
+void DRRGenerator::Reset()
+{
+  this->currentVolumeRot = Eigen::Matrix4d::Identity();
+  this->oldRotation[0] = 0;
+  this->oldRotation[1] = 0;
+  this->oldRotation[2] = 0;
 }

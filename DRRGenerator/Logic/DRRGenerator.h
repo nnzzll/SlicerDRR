@@ -49,6 +49,9 @@ class DRRGenerator
   vtkTimeStamp updateTime;
   vtkTimeStamp modifyTime;
 
+  Eigen::Matrix4d currentVolumeRot = Eigen::Matrix4d::Identity();
+  double oldRotation[3]{};
+
  public:
   DRRGenerator();
   ~DRRGenerator() = default;
@@ -90,4 +93,5 @@ class DRRGenerator
   void GetFiducialPosition(double point3D[3], double point2D[2]);
 
   void Update();
+  void Reset();
 };
