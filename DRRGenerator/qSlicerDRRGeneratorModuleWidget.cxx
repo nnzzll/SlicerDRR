@@ -27,6 +27,9 @@
 #include <vtkSlicerDRRGeneratorLogic.h>
 
 // MRML
+#include <qMRMLLayoutManager.h>
+#include <qMRMLSliceWidget.h>
+#include <qSlicerLayoutManager.h>
 #include <vtkMRMLMarkupsFiducialDisplayNode.h>
 #include <vtkMRMLMarkupsFiducialNode.h>
 #include <vtkMRMLNode.h>
@@ -161,8 +164,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   angleSlider = new ctkSliderWidget;
   angleSlider->setSingleStep(0.5);
   angleSlider->setDecimals(1);
-  angleSlider->setMinimum(-180);
-  angleSlider->setMaximum(180);
+  angleSlider->setMinimum(-360);
+  angleSlider->setMaximum(360);
   angleSlider->setValue(0);
   angleSlider->setSuffix(" °");
   drrFormLayout->addRow("Angle: ", angleSlider);
@@ -170,8 +173,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   rxSlider = new ctkSliderWidget;
   rxSlider->setSingleStep(0.5);
   rxSlider->setDecimals(1);
-  rxSlider->setMinimum(-90);
-  rxSlider->setMaximum(90);
+  rxSlider->setMinimum(-180);
+  rxSlider->setMaximum(180);
   rxSlider->setValue(0);
   rxSlider->setSuffix(" °");
   drrFormLayout->addRow("Rotation X: ", rxSlider);
@@ -179,8 +182,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   rySlider = new ctkSliderWidget;
   rySlider->setSingleStep(0.5);
   rySlider->setDecimals(1);
-  rySlider->setMinimum(-90);
-  rySlider->setMaximum(90);
+  rySlider->setMinimum(-180);
+  rySlider->setMaximum(180);
   rySlider->setValue(0);
   rySlider->setSuffix(" °");
   drrFormLayout->addRow("Rotation Y: ", rySlider);
@@ -188,8 +191,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   rzSlider = new ctkSliderWidget;
   rzSlider->setSingleStep(0.5);
   rzSlider->setDecimals(1);
-  rzSlider->setMinimum(-90);
-  rzSlider->setMaximum(90);
+  rzSlider->setMinimum(-180);
+  rzSlider->setMaximum(180);
   rzSlider->setValue(0);
   rzSlider->setSuffix(" °");
   drrFormLayout->addRow("Rotation Z: ", rzSlider);
@@ -363,6 +366,9 @@ void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
   auto compositeNode = d->logic()->getNodeByID<vtkMRMLSliceCompositeNode>("vtkMRMLSliceCompositeNodeRed");
   compositeNode->SetForegroundVolumeID(drrNode->GetID());
   compositeNode->SetForegroundOpacity(d->opacitySlider->value());
+  if (!d->xraySelector->currentNode()) compositeNode->SetBackgroundVolumeID("");
+  auto layoutManager = qSlicerApplication::application()->layoutManager();
+  layoutManager->sliceWidget("Red")->fitSliceToBackground();
 
   // 配准点的投影
   auto pointNode = vtkMRMLMarkupsFiducialNode::SafeDownCast(d->pointSelector->currentNode());
