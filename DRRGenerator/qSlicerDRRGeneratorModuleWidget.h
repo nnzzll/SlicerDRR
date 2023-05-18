@@ -41,13 +41,16 @@ class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget
   void exit() override;
 
  public slots:
+  void on3DWidgetShow();
   void onApplyDRR();
   void onDRRNodeAdded(vtkMRMLNode *);
+  void onVolumeSelected(vtkMRMLNode *);
 
  protected:
   QScopedPointer<qSlicerDRRGeneratorModuleWidgetPrivate> d_ptr;
 
   void setup() override;
+  bool flag3D = false;
 
  private:
   Q_DECLARE_PRIVATE(qSlicerDRRGeneratorModuleWidget);

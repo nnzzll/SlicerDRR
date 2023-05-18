@@ -21,12 +21,18 @@
 #include <ctkSliderWidget.h>
 
 // vtk
+
+// logic
 #include <vtkSlicerDRRGeneratorLogic.h>
 
 // MRML
 #include <vtkMRMLNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLScene.h>
+#include <vtkMRMLViewLogic.h>
+#include <vtkMRMLViewNode.h>
+#include <vtkMRMLVolumePropertyNode.h>
+#include <vtkMRMLVolumeRenderingDisplayNode.h>
 
 // Qt includes
 #include <QDebug>
@@ -38,6 +44,9 @@
 
 // Slicer includes
 #include <qMRMLNodeComboBox.h>
+#include <qMRMLThreeDView.h>
+#include <qMRMLThreeDViewControllerWidget.h>
+#include <qMRMLThreeDWidget.h>
 #include <qSlicerApplication.h>
 #include "qSlicerDRRGeneratorModuleWidget.h"
 #include "qSlicerWidget.h"
@@ -67,11 +76,16 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   ctkSliderWidget* sizeSlider;
   ctkSliderWidget* spacingSlider;
   QPushButton* applyButton;
+  QPushButton* threeDViewButton;
+  qMRMLThreeDWidget* threeDWidget;
 
   qSlicerDRRGeneratorModuleWidgetPrivate(qSlicerDRRGeneratorModuleWidget& object);
+  ~qSlicerDRRGeneratorModuleWidgetPrivate();
   void onEnterConnection();
   void onExitConnection();
   void setupUi(qSlicerWidget* qSlicerDRRGeneratorModuleWidget);
+  void setup3DWidget();
+  void hideAllVolumeNode();
   vtkSlicerDRRGeneratorLogic* logic() const;
 
  private:
@@ -85,6 +99,11 @@ qSlicerDRRGeneratorModuleWidgetPrivate::qSlicerDRRGeneratorModuleWidgetPrivate(
     qSlicerDRRGeneratorModuleWidget& object)
     : q_ptr(&object)
 {
+}
+
+qSlicerDRRGeneratorModuleWidgetPrivate::~qSlicerDRRGeneratorModuleWidgetPrivate()
+{
+  delete threeDWidget;
 }
 
 void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGeneratorModuleWidget)
@@ -237,6 +256,38 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
 
   applyButton = new QPushButton("Apply");
   drrFormLayout->addRow(applyButton);
+
+  threeDViewButton = new QPushButton("Show/Hide 3D Widget");
+  drrFormLayout->addRow(threeDViewButton);
+}
+
+void qSlicerDRRGeneratorModuleWidgetPrivate::setup3DWidget()
+{
+  std::string layoutName = "DRRView";
+  std::string layoutLabel = "DRR";
+  vtkSmartPointer<vtkMRMLViewLogic> viewLogic = vtkSmartPointer<vtkMRMLViewLogic>::New();
+  viewLogic->SetMRMLScene(qSlicerApplication::application()->mrmlScene());
+  auto viewNode = viewLogic->AddViewNode(layoutName.c_str());
+  viewNode->SetLayoutLabel(layoutLabel.c_str());
+  threeDWidget = new qMRMLThreeDWidget;
+  threeDWidget->setMRMLScene(qSlicerApplication::application()->mrmlScene());
+  threeDWidget->setMRMLViewNode(viewNode);
+  threeDWidget->threeDController()->setVisible(false);
+  viewNode->SetBackgroundColor(0.0, 0.0, 0.0);
+  viewNode->SetBackgroundColor2(0.0, 0.0, 0.0);
+  viewNode->SetBoxVisible(0);
+  viewNode->SetAxisLabelsVisible(0);
+}
+
+void qSlicerDRRGeneratorModuleWidgetPrivate::hideAllVolumeNode()
+{
+  auto scene = qSlicerApplication::application()->mrmlScene();
+  std::vector<vtkMRMLNode*> vrdNodes;
+  scene->GetNodesByClass("vtkMRMLVolumeRenderingDisplayNode", vrdNodes);
+  for (auto vrdNode : vrdNodes)
+  {
+    vtkMRMLVolumeRenderingDisplayNode::SafeDownCast(vrdNode)->SetVisibility(0);
+  }
 }
 
 void qSlicerDRRGeneratorModuleWidgetPrivate::onEnterConnection()
@@ -245,6 +296,10 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::onEnterConnection()
   connects.push_back(QObject::connect(applyButton, SIGNAL(clicked(bool)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(drrSelector, SIGNAL(nodeAdded(vtkMRMLNode*)), q,
                                       SLOT(onDRRNodeAdded(vtkMRMLNode*))));
+  connects.push_back(QObject::connect(volumeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q,
+                                      SLOT(onVolumeSelected(vtkMRMLNode*))));
+  connects.push_back(
+      QObject::connect(threeDViewButton, SIGNAL(clicked(bool)), q, SLOT(on3DWidgetShow())));
 }
 
 void qSlicerDRRGeneratorModuleWidgetPrivate::onExitConnection()
@@ -272,6 +327,7 @@ void qSlicerDRRGeneratorModuleWidget::setup()
   Q_D(qSlicerDRRGeneratorModuleWidget);
   d->setupUi(this);
   this->Superclass::setup();
+  d->setup3DWidget();
 }
 
 void qSlicerDRRGeneratorModuleWidget::enter()
@@ -296,4 +352,45 @@ void qSlicerDRRGeneratorModuleWidget::onDRRNodeAdded(vtkMRMLNode* node)
 {
   Q_D(qSlicerDRRGeneratorModuleWidget);
   qDebug() << __FUNCTION__ << " clicked!";
+}
+
+void qSlicerDRRGeneratorModuleWidget::onVolumeSelected(vtkMRMLNode* node)
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  if (!node) return;
+  auto app = qSlicerApplication::application();
+  vtkMRMLScene* scene = app->mrmlScene();
+  scene->StartState(vtkMRMLScene::BatchProcessState);
+  auto volumeNode = vtkMRMLScalarVolumeNode::SafeDownCast(node);
+  d->hideAllVolumeNode();
+  auto displayNode = vtkMRMLVolumeRenderingDisplayNode::SafeDownCast(
+      scene->GetFirstNode(volumeNode->GetName(), "vtkMRMLVolumeRenderingDisplayNode"));
+  if (displayNode)
+  {
+    displayNode->SetVisibility(1);
+  }
+  else
+  {
+    displayNode = d->logic()->createVolumeRenderingNode(volumeNode);
+    auto viewNode = d->threeDWidget->mrmlViewNode();
+    displayNode->SetDisplayableOnlyInView(viewNode->GetID());
+    displayNode->SetVisibility(1);
+  }
+
+  scene->EndState(vtkMRMLScene::BatchProcessState);
+}
+
+void qSlicerDRRGeneratorModuleWidget::on3DWidgetShow()
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  qDebug() << __FUNCTION__ << " clicked!";
+  flag3D = !flag3D;
+  if (flag3D)
+  {
+    d->threeDWidget->show();
+  }
+  else
+  {
+    d->threeDWidget->hide();
+  }
 }
