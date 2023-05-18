@@ -30,6 +30,7 @@
 #include <qMRMLLayoutManager.h>
 #include <qMRMLSliceWidget.h>
 #include <qSlicerLayoutManager.h>
+#include <vtkMRMLLabelMapVolumeNode.h>
 #include <vtkMRMLMarkupsFiducialDisplayNode.h>
 #include <vtkMRMLMarkupsFiducialNode.h>
 #include <vtkMRMLNode.h>
@@ -65,6 +66,7 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   qMRMLNodeComboBox* drrSelector;
   qMRMLNodeComboBox* xraySelector;
   qMRMLNodeComboBox* pointSelector;
+  qMRMLNodeComboBox* segmentSelector;
   ctkSliderWidget* angleSlider;
   ctkSliderWidget* rxSlider;
   ctkSliderWidget* rySlider;
@@ -160,6 +162,18 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   pointSelector->setMRMLScene(qSlicerApplication::application()->mrmlScene());
   pointSelector->setToolTip("Select the Registration Points");
   drrFormLayout->addRow("Registration Point", pointSelector);
+
+  // Segmentation Node selector
+  segmentSelector = new qMRMLNodeComboBox;
+  segmentSelector->setNodeTypes(QStringList("vtkMRMLLabelMapVolumeNode"));
+  segmentSelector->setAddEnabled(false);
+  segmentSelector->setRemoveEnabled(false);
+  segmentSelector->setNoneEnabled(false);
+  segmentSelector->setShowHidden(false);
+  segmentSelector->setShowChildNodeTypes(false);
+  segmentSelector->setMRMLScene(qSlicerApplication::application()->mrmlScene());
+  segmentSelector->setToolTip("Select the Segmentation Node");
+  drrFormLayout->addRow("Spine STL", segmentSelector);
 
   // DRR Parameter widgets
   angleSlider = new ctkSliderWidget;
@@ -341,6 +355,7 @@ void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
   Q_D(qSlicerDRRGeneratorModuleWidget);
   vtkMRMLScalarVolumeNode* volumeNode = vtkMRMLScalarVolumeNode::SafeDownCast(d->volumeSelector->currentNode());
   vtkMRMLScalarVolumeNode* drrNode = vtkMRMLScalarVolumeNode::SafeDownCast(d->drrSelector->currentNode());
+  auto labelNode = vtkMRMLLabelMapVolumeNode::SafeDownCast(d->segmentSelector->currentNode());
   double rotation[3] = {d->rxSlider->value(), d->rySlider->value(), d->rzSlider->value()};
   double translation[3] = {d->txSlider->value(), d->tySlider->value(), d->tzSlider->value()};
   double threshold = d->thSlider->value();
@@ -357,7 +372,7 @@ void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
   double spacing[3] = {d->spacingSlider->value(), d->spacingSlider->value(), 1};
   double scd = d->scdSlider->value();
   double angle = d->angleSlider->value();
-  d->logic()->applyDRR(volumeNode, drrNode, angle, threshold, scd, rotation, translation, size, spacing);
+  d->logic()->applyDRR(volumeNode, drrNode, labelNode, angle, threshold, scd, rotation, translation, size, spacing);
   vtkNew<vtkMatrix4x4> IJKToRASDirectionMatrix;
   volumeNode->GetIJKToRASDirectionMatrix(IJKToRASDirectionMatrix);
   drrNode->SetIJKToRASDirectionMatrix(IJKToRASDirectionMatrix);

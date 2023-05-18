@@ -35,6 +35,7 @@
 
 #include "vtkSlicerDRRGeneratorModuleLogicExport.h"
 class DRRGenerator;
+class vtkMRMLLabelMapVolumeNode;
 class vtkMRMLMarkupsFiducialNode;
 class vtkMRMLScalarVolumeNode;
 
@@ -54,9 +55,9 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
   template <typename NodeType>
   static NodeType* getNodeByID(const std::string& nodeID);
 
-  void applyDRR(vtkMRMLScalarVolumeNode*, vtkMRMLScalarVolumeNode*, double angle, double threshold,
-                double scd, double rotation[3], double translation[3], int size[3],
-                double spacing[3]);
+  void applyDRR(vtkMRMLScalarVolumeNode*, vtkMRMLScalarVolumeNode*, vtkMRMLLabelMapVolumeNode*,
+                double angle, double threshold, double scd, double rotation[3],
+                double translation[3], int size[3], double spacing[3]);
   void getFiducialPosition(vtkMRMLScalarVolumeNode*, vtkMRMLMarkupsFiducialNode*, IJKVec&);
   void resetDRRGenerator();
   std::shared_ptr<DRRGenerator> drrGen;

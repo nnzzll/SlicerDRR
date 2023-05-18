@@ -33,9 +33,11 @@ void DRRGenerator::Initialize()
 
   m_DRR = vtkSmartPointer<vtkImageData>::New();
   m_DRR->SetDimensions(m_Size);
-  m_DRR->AllocateScalars(VTK_SHORT, 1);
+  m_DRR->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
   m_DRR->SetSpacing(1.0, 1.0, 1.0);  // ! 在MRMLNode中记录Spacing,故此处设为0
-  imagePointer = static_cast<short*>(m_DRR->GetScalarPointer());
+  imagePointer = static_cast<unsigned short*>(m_DRR->GetScalarPointer());
+
+  rayIncrement = static_cast<double>(VTK_UNSIGNED_SHORT_MAX) / (double)m_Size[0];
 
   row = m_Size[0] / m_BlockSize;
   col = m_Size[1] / m_BlockSize;
@@ -89,9 +91,9 @@ void DRRGenerator::Rz(double isocenter[3], double angle, Eigen::Matrix4d& out)
   // clang-format on
 }
 
-short DRRGenerator::Evaluate(Eigen::Vector4d& point)
+unsigned short DRRGenerator::Evaluate(Eigen::Vector4d& point)
 {
-  short pixval;
+  unsigned short pixval;
   int cIndex[3];
 
   float firstIntersection[3];
@@ -107,8 +109,8 @@ short DRRGenerator::Evaluate(Eigen::Vector4d& point)
   int firstIntersectionIndexUp[3], firstIntersectionIndexDown[3];
   int iU, jU, kU;
 
-  const short minOutputValue = VTK_SHORT_MIN;
-  const short maxOutputValue = VTK_SHORT_MAX;
+  const unsigned short minOutputValue = VTK_UNSIGNED_SHORT_MIN;
+  const unsigned short maxOutputValue = VTK_UNSIGNED_SHORT_MAX;
 
   Eigen::Vector4d drrWorld;
   drrWorld = m_Transform * point;
@@ -321,17 +323,16 @@ short DRRGenerator::Evaluate(Eigen::Vector4d& point)
     {
       size_t index =
           cIndex[0] + cIndex[1] * m_VolumeSize[0] + cIndex[2] * m_VolumeSize[1] * m_VolumeSize[0];
-      value = static_cast<float>(volumePointer[index]);
-      if (value > m_Threshold) /* Ignore voxels whose intensities are below the threshold. */
+      if (this->segmentPointer[index] == 1)
       {
-        d12 += (alphaCmin - alphaCminPrev) * (value - m_Threshold);
+        d12 += this->rayIncrement;
       }
     }
   }
 
   pixval = d12 < minOutputValue   ? minOutputValue
            : d12 > maxOutputValue ? maxOutputValue
-                                  : static_cast<short>(d12);
+                                  : static_cast<unsigned short>(d12);
 
   return pixval;
 }
@@ -515,7 +516,7 @@ vtkSmartPointer<vtkImageData> DRRGenerator::GetOutput()
   }
 
   vtkNew<vtkImageFlip> flipFilter;
-  flipFilter->SetInputData(outputImage);
+  flipFilter->SetInputData(this->m_DRR);
   flipFilter->SetFilteredAxes(1);
   flipFilter->Update();
   return flipFilter->GetOutput();
@@ -527,4 +528,9 @@ void DRRGenerator::Reset()
   this->oldRotation[0] = 0;
   this->oldRotation[1] = 0;
   this->oldRotation[2] = 0;
+}
+
+void DRRGenerator::SetSegment(vtkImageData* segment)
+{
+  this->segmentPointer = static_cast<short*>(segment->GetScalarPointer());
 }

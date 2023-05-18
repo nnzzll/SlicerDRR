@@ -14,7 +14,7 @@ class DRRGenerator
 
   void ComputeTransform();
   void Initialize();
-  short Evaluate(Eigen::Vector4d& point);
+  unsigned short Evaluate(Eigen::Vector4d& point);
   void Rx(double isocenter[3], double angle, Eigen::Matrix4d& out);
   void Ry(double isocenter[3], double angle, Eigen::Matrix4d& out);
   void Rz(double isocenter[3], double angle, Eigen::Matrix4d& out);
@@ -42,7 +42,8 @@ class DRRGenerator
   int row, col;                       // 共有row * col 个block
   double sourceWorld[3];              // 相机原点在LPS下的坐标
   short* volumePointer;               // CT体数据的数据指针
-  short* imagePointer;                // DRR图像的数据指针
+  unsigned short* imagePointer;                // DRR图像的数据指针
+  short* segmentPointer;            // 分割结果的数据指针
   size_t volumeLength;                // CT体素的个数
   Eigen::Matrix4d m_Transform;        // 相机坐标到LPS坐标的转换矩阵
   vtkSmartPointer<vtkImageData> m_DRR;
@@ -51,6 +52,8 @@ class DRRGenerator
 
   Eigen::Matrix4d currentVolumeRot = Eigen::Matrix4d::Identity();
   double oldRotation[3]{};
+
+  double rayIncrement;
 
  public:
   DRRGenerator();
@@ -89,6 +92,7 @@ class DRRGenerator
   VelGetMacro(Transform, Eigen::Matrix4d);
 
   void SetInputData(vtkImageData* image, double spacing[3] = nullptr);
+  void SetSegment(vtkImageData* segment);
   vtkSmartPointer<vtkImageData> GetOutput();
   void GetFiducialPosition(double point3D[3], double point2D[2]);
 

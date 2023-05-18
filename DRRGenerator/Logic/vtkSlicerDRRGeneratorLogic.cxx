@@ -20,6 +20,7 @@
 #include "DRRGenerator.h"
 
 // MRML includes
+#include <vtkMRMLLabelMapVolumeNode.h>
 #include <vtkMRMLMarkupsFiducialNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLScene.h>
@@ -72,10 +73,19 @@ void vtkSlicerDRRGeneratorLogic::OnMRMLSceneNodeAdded(vtkMRMLNode* vtkNotUsed(no
 void vtkSlicerDRRGeneratorLogic::OnMRMLSceneNodeRemoved(vtkMRMLNode* vtkNotUsed(node)) {}
 
 void vtkSlicerDRRGeneratorLogic::applyDRR(vtkMRMLScalarVolumeNode* ctVolume,
-                                          vtkMRMLScalarVolumeNode* drrVolume, double angle,
+                                          vtkMRMLScalarVolumeNode* drrVolume,
+                                          vtkMRMLLabelMapVolumeNode* segVolume, double angle,
                                           double threshold, double scd, double rotation[3],
                                           double translation[3], int size[3], double spacing[3])
 {
+  int ctDim[3], segDim[3];
+  ctVolume->GetImageData()->GetDimensions(ctDim);
+  segVolume->GetImageData()->GetDimensions(segDim);
+  if (ctDim[0] != segDim[0] || ctDim[1] != segDim[1] || ctDim[2] != segDim[2])
+  {
+    std::cerr << "CT Size should be equal to Segment Size!" << std::endl;
+    return;
+  }
   auto begin = std::chrono::duration_cast<std::chrono::milliseconds>(
                    std::chrono::system_clock::now().time_since_epoch())
                    .count();
@@ -96,6 +106,7 @@ void vtkSlicerDRRGeneratorLogic::applyDRR(vtkMRMLScalarVolumeNode* ctVolume,
   this->drrGen->SetSpacing(spacing);
   this->drrGen->SetSize(size);
   this->drrGen->SetInputData(ctVolume->GetImageData(), ctSpacing);
+  this->drrGen->SetSegment(segVolume->GetImageData());
   this->drrGen->Update();
   vtkSmartPointer<vtkImageData> drrImage = this->drrGen->GetOutput();
   drrVolume->SetAndObserveImageData(drrImage.GetPointer());
