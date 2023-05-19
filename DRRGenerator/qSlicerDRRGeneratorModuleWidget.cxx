@@ -21,6 +21,8 @@
 #include <ctkSliderWidget.h>
 
 // vtk
+#include <vtkCommand.h>
+#include <vtkVolumeProperty.h>
 
 // logic
 #include <vtkSlicerDRRGeneratorLogic.h>
@@ -63,6 +65,7 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   QFormLayout* drrFormLayout;
   qMRMLNodeComboBox* volumeSelector;
   qMRMLNodeComboBox* drrSelector;
+  qMRMLNodeComboBox* xraySelector;
   qMRMLNodeComboBox* pointSelector;
   ctkSliderWidget* angleSlider;
   ctkSliderWidget* rxSlider;
@@ -71,10 +74,10 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   ctkSliderWidget* txSlider;
   ctkSliderWidget* tySlider;
   ctkSliderWidget* tzSlider;
-  ctkSliderWidget* scdSlider;
-  ctkSliderWidget* thSlider;
   ctkSliderWidget* sizeSlider;
-  ctkSliderWidget* spacingSlider;
+  ctkSliderWidget* wwSlider;  // DRR体绘制的窗宽
+  ctkSliderWidget* wlSlider;  // DRR体绘制的窗位
+  ctkSliderWidget* opSlider;  // DRR体绘制的透明度
   QPushButton* applyButton;
   QPushButton* threeDViewButton;
   qMRMLThreeDWidget* threeDWidget;
@@ -95,8 +98,7 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   qSlicerDRRGeneratorModuleWidget* const q_ptr;
 };
 
-qSlicerDRRGeneratorModuleWidgetPrivate::qSlicerDRRGeneratorModuleWidgetPrivate(
-    qSlicerDRRGeneratorModuleWidget& object)
+qSlicerDRRGeneratorModuleWidgetPrivate::qSlicerDRRGeneratorModuleWidgetPrivate(qSlicerDRRGeneratorModuleWidget& object)
     : q_ptr(&object)
 {
 }
@@ -109,8 +111,7 @@ qSlicerDRRGeneratorModuleWidgetPrivate::~qSlicerDRRGeneratorModuleWidgetPrivate(
 void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGeneratorModuleWidget)
 {
   if (qSlicerDRRGeneratorModuleWidget->objectName().isEmpty())
-    qSlicerDRRGeneratorModuleWidget->setObjectName(
-        QString::fromUtf8("qSlicerDRRGeneratorModuleWidget"));
+    qSlicerDRRGeneratorModuleWidget->setObjectName(QString::fromUtf8("qSlicerDRRGeneratorModuleWidget"));
   qSlicerDRRGeneratorModuleWidget->resize(525, 319);
   verticalLayout = new QVBoxLayout(qSlicerDRRGeneratorModuleWidget);
   verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
@@ -143,6 +144,18 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrSelector->setToolTip("Select the CT Volume");
   drrFormLayout->addRow("DRR: ", drrSelector);
 
+  // xray selector
+  xraySelector = new qMRMLNodeComboBox;
+  xraySelector->setNodeTypes(QStringList("vtkMRMLScalarVolumeNode"));
+  xraySelector->setAddEnabled(false);
+  xraySelector->setRemoveEnabled(false);
+  xraySelector->setNoneEnabled(true);
+  xraySelector->setShowHidden(false);
+  xraySelector->setShowChildNodeTypes(false);
+  xraySelector->setMRMLScene(qSlicerApplication::application()->mrmlScene());
+  xraySelector->setToolTip("Select XRay");
+  drrFormLayout->addRow("X-Ray: ", xraySelector);
+
   // registration point selector
   pointSelector = new qMRMLNodeComboBox;
   pointSelector->setNodeTypes(QStringList("vtkMRMLMarkupsFiducialNode"));
@@ -159,8 +172,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   angleSlider = new ctkSliderWidget;
   angleSlider->setSingleStep(0.5);
   angleSlider->setDecimals(1);
-  angleSlider->setMinimum(-180);
-  angleSlider->setMaximum(180);
+  angleSlider->setMinimum(-360);
+  angleSlider->setMaximum(360);
   angleSlider->setValue(0);
   angleSlider->setSuffix(" °");
   drrFormLayout->addRow("Angle: ", angleSlider);
@@ -168,8 +181,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   rxSlider = new ctkSliderWidget;
   rxSlider->setSingleStep(0.5);
   rxSlider->setDecimals(1);
-  rxSlider->setMinimum(-90);
-  rxSlider->setMaximum(90);
+  rxSlider->setMinimum(-180);
+  rxSlider->setMaximum(180);
   rxSlider->setValue(0);
   rxSlider->setSuffix(" °");
   drrFormLayout->addRow("Rotation X: ", rxSlider);
@@ -177,8 +190,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   rySlider = new ctkSliderWidget;
   rySlider->setSingleStep(0.5);
   rySlider->setDecimals(1);
-  rySlider->setMinimum(-90);
-  rySlider->setMaximum(90);
+  rySlider->setMinimum(-180);
+  rySlider->setMaximum(180);
   rySlider->setValue(0);
   rySlider->setSuffix(" °");
   drrFormLayout->addRow("Rotation Y: ", rySlider);
@@ -186,8 +199,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   rzSlider = new ctkSliderWidget;
   rzSlider->setSingleStep(0.5);
   rzSlider->setDecimals(1);
-  rzSlider->setMinimum(-90);
-  rzSlider->setMaximum(90);
+  rzSlider->setMinimum(-180);
+  rzSlider->setMaximum(180);
   rzSlider->setValue(0);
   rzSlider->setSuffix(" °");
   drrFormLayout->addRow("Rotation Z: ", rzSlider);
@@ -219,24 +232,6 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   tzSlider->setSuffix(" mm");
   drrFormLayout->addRow("Translation Z: ", tzSlider);
 
-  scdSlider = new ctkSliderWidget;
-  scdSlider->setSingleStep(0.5);
-  scdSlider->setDecimals(1);
-  scdSlider->setMinimum(100);
-  scdSlider->setMaximum(1500);
-  scdSlider->setValue(1000);
-  scdSlider->setSuffix(" mm");
-  drrFormLayout->addRow("Souce To Isocenter: ", scdSlider);
-
-  thSlider = new ctkSliderWidget;
-  thSlider->setSingleStep(0.5);
-  thSlider->setDecimals(1);
-  thSlider->setMinimum(-1024);
-  thSlider->setMaximum(1024);
-  thSlider->setValue(0);
-  thSlider->setSuffix(" mm");
-  drrFormLayout->addRow("Threshold: ", thSlider);
-
   sizeSlider = new ctkSliderWidget;
   sizeSlider->setSingleStep(64);
   sizeSlider->setDecimals(0);
@@ -245,14 +240,29 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   sizeSlider->setValue(256);
   drrFormLayout->addRow("DRR Size: ", sizeSlider);
 
-  spacingSlider = new ctkSliderWidget;
-  spacingSlider->setSingleStep(0.1);
-  spacingSlider->setDecimals(1);
-  spacingSlider->setMinimum(0.1);
-  spacingSlider->setMaximum(5.0);
-  spacingSlider->setValue(1.0);
-  spacingSlider->setSuffix(" mm");
-  drrFormLayout->addRow("DRR Spacing: ", spacingSlider);
+  wlSlider = new ctkSliderWidget;
+  wlSlider->setSingleStep(1);
+  wlSlider->setDecimals(0);
+  wlSlider->setMinimum(-1024);
+  wlSlider->setMaximum(1024);
+  wlSlider->setValue(790);
+  drrFormLayout->addRow("Window Level: ", wlSlider);
+
+  wwSlider = new ctkSliderWidget;
+  wwSlider->setSingleStep(2);
+  wwSlider->setDecimals(0);
+  wwSlider->setMinimum(2);
+  wwSlider->setMaximum(2048);
+  wwSlider->setValue(1286);
+  drrFormLayout->addRow("Window Wide: ", wwSlider);
+
+  opSlider = new ctkSliderWidget;
+  opSlider->setSingleStep(0.01);
+  opSlider->setDecimals(2);
+  opSlider->setMinimum(0);
+  opSlider->setMaximum(1);
+  opSlider->setValue(0.30);
+  drrFormLayout->addRow("Scalar Opacity: ", opSlider);
 
   applyButton = new QPushButton("Apply");
   drrFormLayout->addRow(applyButton);
@@ -294,12 +304,25 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::onEnterConnection()
 {
   Q_Q(qSlicerDRRGeneratorModuleWidget);
   connects.push_back(QObject::connect(applyButton, SIGNAL(clicked(bool)), q, SLOT(onApplyDRR())));
-  connects.push_back(QObject::connect(drrSelector, SIGNAL(nodeAdded(vtkMRMLNode*)), q,
-                                      SLOT(onDRRNodeAdded(vtkMRMLNode*))));
+  connects.push_back(
+      QObject::connect(drrSelector, SIGNAL(nodeAdded(vtkMRMLNode*)), q, SLOT(onDRRNodeAdded(vtkMRMLNode*))));
   connects.push_back(QObject::connect(volumeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q,
                                       SLOT(onVolumeSelected(vtkMRMLNode*))));
-  connects.push_back(
-      QObject::connect(threeDViewButton, SIGNAL(clicked(bool)), q, SLOT(on3DWidgetShow())));
+  connects.push_back(QObject::connect(threeDViewButton, SIGNAL(clicked(bool)), q, SLOT(on3DWidgetShow())));
+  connects.push_back(QObject::connect(wwSlider, SIGNAL(valueChanged(double)), q, SLOT(onVolumePropertyModified())));
+  connects.push_back(QObject::connect(wlSlider, SIGNAL(valueChanged(double)), q, SLOT(onVolumePropertyModified())));
+  connects.push_back(QObject::connect(opSlider, SIGNAL(valueChanged(double)), q, SLOT(onVolumePropertyModified())));
+
+  // 调整渲染效果时使变化更平滑
+  connects.push_back(QObject::connect(wwSlider->slider(), SIGNAL(sliderPressed()), q, SLOT(startInteraction())));
+  connects.push_back(QObject::connect(wlSlider->slider(), SIGNAL(sliderPressed()), q, SLOT(startInteraction())));
+  connects.push_back(QObject::connect(opSlider->slider(), SIGNAL(sliderPressed()), q, SLOT(startInteraction())));
+  connects.push_back(QObject::connect(wwSlider->slider(), SIGNAL(sliderReleased()), q, SLOT(endInteraction())));
+  connects.push_back(QObject::connect(wlSlider->slider(), SIGNAL(sliderReleased()), q, SLOT(endInteraction())));
+  connects.push_back(QObject::connect(opSlider->slider(), SIGNAL(sliderReleased()), q, SLOT(endInteraction())));
+  connects.push_back(QObject::connect(wwSlider, SIGNAL(valueChanged(double)), q, SLOT(interaction())));
+  connects.push_back(QObject::connect(wlSlider, SIGNAL(valueChanged(double)), q, SLOT(interaction())));
+  connects.push_back(QObject::connect(opSlider, SIGNAL(valueChanged(double)), q, SLOT(interaction())));
 }
 
 void qSlicerDRRGeneratorModuleWidgetPrivate::onExitConnection()
@@ -376,7 +399,7 @@ void qSlicerDRRGeneratorModuleWidget::onVolumeSelected(vtkMRMLNode* node)
     displayNode->SetDisplayableOnlyInView(viewNode->GetID());
     displayNode->SetVisibility(1);
   }
-
+  d->threeDWidget->threeDView()->resetCamera();
   scene->EndState(vtkMRMLScene::BatchProcessState);
 }
 
@@ -392,5 +415,59 @@ void qSlicerDRRGeneratorModuleWidget::on3DWidgetShow()
   else
   {
     d->threeDWidget->hide();
+  }
+}
+
+void qSlicerDRRGeneratorModuleWidget::onVolumePropertyModified()
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  double wl = d->wlSlider->value();
+  double ww = d->wwSlider->value();
+  double op = d->opSlider->value();
+  d->logic()->updateVolumePropertyNode(wl, ww, op);
+}
+
+void qSlicerDRRGeneratorModuleWidget::startInteraction()
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  if (!d->logic()->VolumePropertyNode)
+  {
+    return;
+  }
+
+  vtkVolumeProperty* volumeProperty = d->logic()->VolumePropertyNode->GetVolumeProperty();
+  if (volumeProperty)
+  {
+    volumeProperty->InvokeEvent(vtkCommand::StartInteractionEvent);
+  }
+}
+
+void qSlicerDRRGeneratorModuleWidget::endInteraction()
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  if (!d->logic()->VolumePropertyNode)
+  {
+    return;
+  }
+
+  vtkVolumeProperty* volumeProperty = d->logic()->VolumePropertyNode->GetVolumeProperty();
+  if (volumeProperty)
+  {
+    volumeProperty->InvokeEvent(vtkCommand::EndInteractionEvent);
+  }
+}
+
+void qSlicerDRRGeneratorModuleWidget::interaction()
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  if (!d->logic()->VolumePropertyNode)
+  {
+    return;
+  }
+
+  vtkVolumeProperty* volumeProperty = d->logic()->VolumePropertyNode->GetVolumeProperty();
+  if (volumeProperty)
+  {
+    volumeProperty->InvokeEvent(vtkCommand::InteractionEvent);
   }
 }

@@ -37,8 +37,7 @@ class vtkMRMLScalarVolumeNode;
 class vtkMRMLVolumePropertyNode;
 class vtkMRMLVolumeRenderingDisplayNode;
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
-    : public vtkSlicerModuleLogic
+class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic : public vtkSlicerModuleLogic
 {
  public:
   static vtkSlicerDRRGeneratorLogic* New();
@@ -49,6 +48,10 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
   static NodeType* getNodeByName(const std::string& nodeName, bool createIfNotExists = false);
 
   vtkMRMLVolumeRenderingDisplayNode* createVolumeRenderingNode(vtkMRMLScalarVolumeNode* volumeNode);
+
+  void updateVolumePropertyNode(double wl, double ww, double op);
+
+  vtkMRMLVolumePropertyNode* VolumePropertyNode = nullptr;
 
  protected:
   vtkSlicerDRRGeneratorLogic();
@@ -62,7 +65,6 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic
   void OnMRMLSceneNodeAdded(vtkMRMLNode* node) override;
   void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) override;
   void SetupVolumePropertyNode(vtkMRMLVolumePropertyNode* vpn);
-
 
  private:
   vtkSlicerDRRGeneratorLogic(const vtkSlicerDRRGeneratorLogic&);  // Not implemented

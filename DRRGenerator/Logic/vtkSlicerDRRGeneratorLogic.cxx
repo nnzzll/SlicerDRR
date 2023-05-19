@@ -78,12 +78,12 @@ vtkMRMLVolumeRenderingDisplayNode* vtkSlicerDRRGeneratorLogic::createVolumeRende
   // Create Volume Rendering Display Node
   std::string nodeName = std::string(volumeNode->GetName());
   auto displayNode = vtkMRMLVolumeRenderingDisplayNode::SafeDownCast(
-      this->getNodeByName<vtkMRMLGPURayCastVolumeRenderingDisplayNode>(nodeName + "DisplayNode",
-                                                                       true));
+      this->getNodeByName<vtkMRMLGPURayCastVolumeRenderingDisplayNode>(nodeName + "DisplayNode", true));
   volumeNode->AddAndObserveDisplayNodeID(displayNode->GetID());
 
   // Create Volume Property Node
   auto vpn = this->getNodeByName<vtkMRMLVolumePropertyNode>("DRRVolumeProperty", true);
+  this->VolumePropertyNode = vpn;
   this->SetupVolumePropertyNode(vpn);
   displayNode->SetAndObserveVolumePropertyNodeID(vpn->GetID());
   return displayNode;
@@ -114,4 +114,16 @@ void vtkSlicerDRRGeneratorLogic::SetupVolumePropertyNode(vtkMRMLVolumePropertyNo
   vp->SetDiffuse(0.9);
   vp->SetSpecularPower(10);
   vp->SetInterpolationTypeToLinear();
+}
+
+void vtkSlicerDRRGeneratorLogic::updateVolumePropertyNode(double wl, double ww, double op)
+{
+  if (!this->VolumePropertyNode) return;
+
+  auto scalarOpacity = VolumePropertyNode->GetScalarOpacity();
+  scalarOpacity->RemoveAllPoints();
+  scalarOpacity->AddPoint(-3024, 0);
+  scalarOpacity->AddPoint(wl - 0.5 * ww, 0);
+  scalarOpacity->AddPoint(wl + 0.5 * ww, op);
+  scalarOpacity->AddPoint(3071, op);
 }

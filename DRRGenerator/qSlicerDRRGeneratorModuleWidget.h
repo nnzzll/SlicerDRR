@@ -27,8 +27,7 @@ class qSlicerDRRGeneratorModuleWidgetPrivate;
 class vtkMRMLNode;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget
-    : public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
@@ -45,6 +44,10 @@ class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget
   void onApplyDRR();
   void onDRRNodeAdded(vtkMRMLNode *);
   void onVolumeSelected(vtkMRMLNode *);
+  void onVolumePropertyModified();
+  void startInteraction();
+  void endInteraction();
+  void interaction();
 
  protected:
   QScopedPointer<qSlicerDRRGeneratorModuleWidgetPrivate> d_ptr;
