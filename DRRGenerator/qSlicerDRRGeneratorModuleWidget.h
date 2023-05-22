@@ -21,6 +21,10 @@
 // Slicer includes
 #include "qSlicerAbstractModuleWidget.h"
 
+// STD includes
+#include <array>
+#include <vector>
+
 #include "qSlicerDRRGeneratorModuleExport.h"
 
 class qSlicerDRRGeneratorModuleWidgetPrivate;
@@ -36,13 +40,17 @@ class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget : p
   qSlicerDRRGeneratorModuleWidget(QWidget *parent = 0);
   virtual ~qSlicerDRRGeneratorModuleWidget();
 
+  using IJKVec = std::vector<std::array<double, 2>>;
+
   void enter() override;
   void exit() override;
 
  public slots:
   void on3DWidgetShow();
   void onApplyDRR();
-  void onDRRNodeAdded(vtkMRMLNode *);
+  void onOpacityChanged(double);
+  void onResetRotation();
+  void onXRaySelected(vtkMRMLNode *);
   void onVolumeSelected(vtkMRMLNode *);
   void onVolumePropertyModified();
   void startInteraction();
@@ -53,6 +61,7 @@ class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget : p
   QScopedPointer<qSlicerDRRGeneratorModuleWidgetPrivate> d_ptr;
 
   void setup() override;
+  void displayRegistrationPoint(IJKVec &);
   bool flag3D = false;
 
  private:

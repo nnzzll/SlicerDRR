@@ -25,14 +25,22 @@
 
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
-// MRML includes
 
 // STD includes
+#include <array>
+#include <vector>
 #include <cstdlib>
 #include <string>
 
+#include <itkeigen/Eigen/Core>
+
 #include "vtkSlicerDRRGeneratorModuleLogicExport.h"
 
+class qMRMLThreeDView;
+class vtkImageData;
+class vtkMatrix4x4;
+class vtkMRMLCameraNode;
+class vtkMRMLMarkupsFiducialNode;
 class vtkMRMLScalarVolumeNode;
 class vtkMRMLVolumePropertyNode;
 class vtkMRMLVolumeRenderingDisplayNode;
@@ -44,14 +52,26 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic : p
   vtkTypeMacro(vtkSlicerDRRGeneratorLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
+  using IJKVec = std::vector<std::array<double, 2>>;
+
   template <typename NodeType>
   static NodeType* getNodeByName(const std::string& nodeName, bool createIfNotExists = false);
 
+  template <typename NodeType>
+  static NodeType* getNodeByID(const std::string& nodeID);
+
   vtkMRMLVolumeRenderingDisplayNode* createVolumeRenderingNode(vtkMRMLScalarVolumeNode* volumeNode);
 
+  void applyDRR(vtkMRMLScalarVolumeNode* volumeNode, vtkMRMLScalarVolumeNode* drrNode, double rotation[3],
+                double translation[3], int size[3]);
+  void getFiducialPosition(vtkMRMLScalarVolumeNode*, vtkMRMLMarkupsFiducialNode*, IJKVec&);
+  void getDRRFromVolumeRendering(vtkMRMLScalarVolumeNode* drrNode);
+  void resetRotation();
   void updateVolumePropertyNode(double wl, double ww, double op);
 
   vtkMRMLVolumePropertyNode* VolumePropertyNode = nullptr;
+
+  void SetThreeDView(qMRMLThreeDView*);
 
  protected:
   vtkSlicerDRRGeneratorLogic();
@@ -65,6 +85,15 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic : p
   void OnMRMLSceneNodeAdded(vtkMRMLNode* node) override;
   void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) override;
   void SetupVolumePropertyNode(vtkMRMLVolumePropertyNode* vpn);
+  void Rx(double isocenter[3], double angle, Eigen::Matrix4d& out);
+  void Ry(double isocenter[3], double angle, Eigen::Matrix4d& out);
+  void Rz(double isocenter[3], double angle, Eigen::Matrix4d& out);
+  void ConvertEigenToVTK(Eigen::Matrix4d in, vtkMatrix4x4* out);
+
+  vtkMRMLCameraNode* camera;
+  qMRMLThreeDView* view;
+  double oldRotation[3]{};
+  Eigen::Matrix4d currentVolumeRot = Eigen::Matrix4d::Identity();
 
  private:
   vtkSlicerDRRGeneratorLogic(const vtkSlicerDRRGeneratorLogic&);  // Not implemented

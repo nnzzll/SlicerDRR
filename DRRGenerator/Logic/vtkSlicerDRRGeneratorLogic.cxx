@@ -20,8 +20,11 @@
 #include <vtkSlicerVolumeRenderingLogic.h>
 
 // MRML includes
-#include "vtkMRMLCPURayCastVolumeRenderingDisplayNode.h"
-#include "vtkMRMLGPURayCastVolumeRenderingDisplayNode.h"
+#include <vtkMRMLCameraNode.h>
+#include <vtkMRMLCPURayCastVolumeRenderingDisplayNode.h>
+#include <vtkMRMLGPURayCastVolumeRenderingDisplayNode.h>
+#include <vtkMRMLLinearTransformNode.h>
+
 #include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLScene.h>
 #include <vtkMRMLVolumePropertyNode.h>
@@ -29,14 +32,25 @@
 
 // VTK includes
 #include <vtkColorTransferFunction.h>
+#include <vtkImageData.h>
+#include <vtkImageExtractComponents.h>
+#include <vtkImageFlip.h>
+#include <vtkImageLuminance.h>
 #include <vtkIntArray.h>
+#include <vtkMatrix4x4.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
+#include <vtkRenderWindow.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkVolumeProperty.h>
+#include <vtkWindowToImageFilter.h>
 
 // STD includes
 #include <cassert>
+#include <iostream>
+
+// Slicer includes
+#include <qMRMLThreeDView.h>
 
 vtkStandardNewMacro(vtkSlicerDRRGeneratorLogic);
 
@@ -116,6 +130,68 @@ void vtkSlicerDRRGeneratorLogic::SetupVolumePropertyNode(vtkMRMLVolumePropertyNo
   vp->SetInterpolationTypeToLinear();
 }
 
+void vtkSlicerDRRGeneratorLogic::SetThreeDView(qMRMLThreeDView* threeDView)
+{
+  this->view = threeDView;
+  this->camera = threeDView->cameraNode();
+}
+
+void vtkSlicerDRRGeneratorLogic::ConvertEigenToVTK(Eigen::Matrix4d in, vtkMatrix4x4* out)
+{
+  // transpose Eigen Matrix due to difference storage order
+  in.transposeInPlace();
+  double* inPointer = in.data();
+  double* outPointer = out->GetData();
+  for (int i = 0; i < 16; i++)
+  {
+    outPointer[i] = inPointer[i];
+  }
+}
+
+void vtkSlicerDRRGeneratorLogic::Rx(double isocenter[3], double angle, Eigen::Matrix4d& out)
+{
+  double y = isocenter[1], z = isocenter[2];
+  // clang-format off
+  out <<
+    1, 0, 0, 0,
+    0, cos(angle), -sin(angle), y * (1-cos(angle)) + z * sin(angle),
+    0, sin(angle),  cos(angle), z * (1-cos(angle)) - y * sin(angle),
+    0, 0, 0, 1;
+  // clang-format on
+}
+
+void vtkSlicerDRRGeneratorLogic::Ry(double isocenter[3], double angle, Eigen::Matrix4d& out)
+{
+  double x = isocenter[0], z = isocenter[2];
+  // clang-format off
+  out <<
+     cos(angle), 0, sin(angle),  x * (1-cos(angle)) - z * sin(angle),
+     0, 1, 0, 0,
+    -sin(angle), 0, cos(angle),  z * (1-cos(angle)) + x * sin(angle),
+     0, 0, 0, 1;
+  // clang-format on
+}
+
+void vtkSlicerDRRGeneratorLogic::Rz(double isocenter[3], double angle, Eigen::Matrix4d& out)
+{
+  double y = isocenter[1], x = isocenter[0];
+  // clang-format off
+  out <<
+    cos(angle), -sin(angle), 0, x * (1-cos(angle)) + y * sin(angle),
+    sin(angle),  cos(angle), 0, y * (1-cos(angle)) - x * sin(angle),
+    0, 0, 1, 0, 
+    0, 0, 0, 1;
+  // clang-format on
+}
+
+void vtkSlicerDRRGeneratorLogic::resetRotation()
+{
+  this->currentVolumeRot = Eigen::Matrix4d::Identity();
+  this->oldRotation[0] = 0;
+  this->oldRotation[1] = 0;
+  this->oldRotation[2] = 0;
+}
+
 void vtkSlicerDRRGeneratorLogic::updateVolumePropertyNode(double wl, double ww, double op)
 {
   if (!this->VolumePropertyNode) return;
@@ -126,4 +202,108 @@ void vtkSlicerDRRGeneratorLogic::updateVolumePropertyNode(double wl, double ww, 
   scalarOpacity->AddPoint(wl - 0.5 * ww, 0);
   scalarOpacity->AddPoint(wl + 0.5 * ww, op);
   scalarOpacity->AddPoint(3071, op);
+}
+
+void vtkSlicerDRRGeneratorLogic::applyDRR(vtkMRMLScalarVolumeNode* volumeNode, vtkMRMLScalarVolumeNode* drrNode,
+                                          double rotation[3], double translation[3], int size[3])
+{
+  this->view->setFixedSize(size[0], size[1]);
+  double bounds[6];
+  volumeNode->GetBounds(bounds);
+  double center[3] = {
+      0.5 * (bounds[0] + bounds[1]),
+      0.5 * (bounds[2] + bounds[3]),
+      0.5 * (bounds[4] + bounds[5]),
+  };
+
+  // 先将相机设置为初始位置
+  double position[3], focalPoint[3], viewUp[3]{0, 0, 1};
+  memcpy(focalPoint, center, 3 * sizeof(double));
+  memcpy(position, center, 3 * sizeof(double));
+  position[1] += 1000;  // 焦距默认设置为1000
+  this->camera->SetPosition(position);
+  this->camera->SetFocalPoint(focalPoint);
+  this->camera->SetViewUp(viewUp);
+
+  // 计算相机的旋转
+  Eigen::Matrix4d rx, ry, rz;
+  Eigen::Vector4d translationVec;
+  const double dtr = 0.017453292519943295;
+  rotation[0] *= dtr;
+  rotation[1] *= dtr;
+  rotation[2] *= dtr;
+  // ! 每一次旋转都是在当前的基础上沿自身的某个轴转动
+  // ! 因此可以避免万向锁的情况
+  double deltaRx = rotation[0] - oldRotation[0];
+  double deltaRy = rotation[1] - oldRotation[1];
+  double deltaRz = rotation[2] - oldRotation[2];
+  memcpy(oldRotation, rotation, 3 * sizeof(double));
+  Eigen::Matrix4d deltaR;
+  if (std::abs(deltaRx) > 1e-8)
+  {
+    this->Rx(center, deltaRx, deltaR);
+  }
+  else if (std::abs(deltaRy) > 1e-8)
+  {
+    this->Ry(center, deltaRy, deltaR);
+  }
+  else
+  {
+    this->Rz(center, deltaRz, deltaR);
+  }
+  Eigen::Matrix4d volumeRot = this->currentVolumeRot * deltaR;
+  this->currentVolumeRot = volumeRot;
+  translationVec << translation[0], translation[1], translation[2], 0;
+  volumeRot.col(3) += translationVec;
+
+  // 设置体数据的旋转
+  vtkNew<vtkMatrix4x4> transformMatrix;
+  auto transformNode = this->getNodeByName<vtkMRMLLinearTransformNode>("VolumeTransform");
+  this->ConvertEigenToVTK(volumeRot, transformMatrix);
+  transformNode->SetMatrixTransformToParent(transformMatrix);
+  this->camera->ResetClippingRange();  // 更新渲染的显示范围
+
+  this->getDRRFromVolumeRendering(drrNode);
+}
+
+void vtkSlicerDRRGeneratorLogic::getDRRFromVolumeRendering(vtkMRMLScalarVolumeNode* drrNode)
+{
+  // 将体绘制转换成图像
+  auto rw = this->view->renderWindow();
+  rw->Render();  // 更新渲染窗口的内容
+  vtkNew<vtkWindowToImageFilter> wti;
+  wti->SetInput(rw);
+  wti->Update();
+  vtkNew<vtkImageFlip> vflip;
+  vflip->SetInputData(wti->GetOutput());
+  vflip->SetFilteredAxis(1);
+  vflip->Update();
+
+  // 将RGB图像转换成灰度图
+  vtkNew<vtkImageExtractComponents> extract;
+  extract->SetInputData(vflip->GetOutput());
+  extract->SetComponents(0, 1, 2);
+  vtkNew<vtkImageLuminance> luminance;
+  luminance->SetInputConnection(extract->GetOutputPort());
+  luminance->Update();
+  drrNode->SetAndObserveImageData(luminance->GetOutput());
+}
+
+void vtkSlicerDRRGeneratorLogic::getFiducialPosition(vtkMRMLScalarVolumeNode* volumeNode,
+                                                     vtkMRMLMarkupsFiducialNode* pointNode, IJKVec& ijkPoints)
+{
+  double rasPos[3]{}, point3D[3]{}, point2D[2]{}, origin[3];
+  volumeNode->GetOrigin(origin);
+  ijkPoints.clear();
+  // for (int i = 0; i < pointNode->GetNumberOfControlPoints(); i++)
+  // {
+  //   pointNode->GetNthControlPointPosition(i, rasPos);
+  //   // !RAS -> LPS 计算Camera2LPS时, 认为CT origin为0, 0, 0
+  //   // !但实际在CT上选点的时候origin时不为0的,所以要减掉
+  //   point3D[0] = -(rasPos[0] - origin[0]);
+  //   point3D[1] = -(rasPos[1] - origin[1]);
+  //   point3D[2] = rasPos[2] - origin[2];
+  //   this->drrGen->GetFiducialPosition(point3D, point2D);
+  //   ijkPoints.push_back({point2D[0], point2D[1]});
+  // }
 }
