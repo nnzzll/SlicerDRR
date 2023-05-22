@@ -24,7 +24,7 @@
 #include <vtkMRMLCPURayCastVolumeRenderingDisplayNode.h>
 #include <vtkMRMLGPURayCastVolumeRenderingDisplayNode.h>
 #include <vtkMRMLLinearTransformNode.h>
-
+#include <vtkMRMLMarkupsFiducialNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLScene.h>
 #include <vtkMRMLVolumePropertyNode.h>
@@ -40,6 +40,8 @@
 #include <vtkMatrix4x4.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
+#include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
 #include <vtkRenderWindow.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkVolumeProperty.h>
@@ -292,18 +294,16 @@ void vtkSlicerDRRGeneratorLogic::getDRRFromVolumeRendering(vtkMRMLScalarVolumeNo
 void vtkSlicerDRRGeneratorLogic::getFiducialPosition(vtkMRMLScalarVolumeNode* volumeNode,
                                                      vtkMRMLMarkupsFiducialNode* pointNode, IJKVec& ijkPoints)
 {
-  double rasPos[3]{}, point3D[3]{}, point2D[2]{}, origin[3];
-  volumeNode->GetOrigin(origin);
+  double worldPosition[4]{0, 0, 0, 1}, imagePoint[3]{0, 0, 1};
   ijkPoints.clear();
-  // for (int i = 0; i < pointNode->GetNumberOfControlPoints(); i++)
-  // {
-  //   pointNode->GetNthControlPointPosition(i, rasPos);
-  //   // !RAS -> LPS 计算Camera2LPS时, 认为CT origin为0, 0, 0
-  //   // !但实际在CT上选点的时候origin时不为0的,所以要减掉
-  //   point3D[0] = -(rasPos[0] - origin[0]);
-  //   point3D[1] = -(rasPos[1] - origin[1]);
-  //   point3D[2] = rasPos[2] - origin[2];
-  //   this->drrGen->GetFiducialPosition(point3D, point2D);
-  //   ijkPoints.push_back({point2D[0], point2D[1]});
-  // }
+  auto renderer = this->view->renderWindow()->GetRenderers()->GetFirstRenderer();
+  for (int i = 0; i < pointNode->GetNumberOfControlPoints(); i++)
+  {
+    pointNode->GetNthControlPointPositionWorld(i, worldPosition);
+    renderer->SetWorldPoint(worldPosition);
+    renderer->WorldToDisplay();
+    renderer->GetDisplayPoint(imagePoint);
+    imagePoint[1] = this->view->size().height() - imagePoint[1];
+    ijkPoints.push_back({imagePoint[0], imagePoint[1]});
+  }
 }

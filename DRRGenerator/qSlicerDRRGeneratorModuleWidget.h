@@ -49,6 +49,7 @@ class Q_SLICER_QTMODULES_DRRGENERATOR_EXPORT qSlicerDRRGeneratorModuleWidget : p
   void on3DWidgetShow();
   void onApplyDRR();
   void onOpacityChanged(double);
+  void onPointSelected(vtkMRMLNode *);
   void onResetRotation();
   void onXRaySelected(vtkMRMLNode *);
   void onVolumeSelected(vtkMRMLNode *);

@@ -307,7 +307,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setup3DWidget()
   threeDWidget->setMRMLViewNode(viewNode);
   threeDWidget->threeDController()->setVisible(false);
   auto view = threeDWidget->threeDView();
-  view->setFixedSize(d->drrNodeSize[0], d->drrNodeSize[1]);
+  view->setFixedSize(256, 256);
   threeDWidget->show();
   threeDWidget->hide();
   viewNode->SetBackgroundColor(0.0, 0.0, 0.0);
@@ -340,6 +340,8 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::onEnterConnection()
   connects.push_back(QObject::connect(tzSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(sizeSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(opacitySlider, SIGNAL(valueChanged(double)), q, SLOT(onOpacityChanged(double))));
+  connects.push_back(QObject::connect(pointSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q,
+                                      SLOT(onPointSelected(vtkMRMLNode*))));
   connects.push_back(QObject::connect(volumeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q,
                                       SLOT(onVolumeSelected(vtkMRMLNode*))));
   connects.push_back(
@@ -438,12 +440,12 @@ void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
   auto layoutManager = qSlicerApplication::application()->layoutManager();
   layoutManager->sliceWidget("Red")->fitSliceToBackground();
 
-  // // 配准点的投影
-  // auto pointNode = vtkMRMLMarkupsFiducialNode::SafeDownCast(d->pointSelector->currentNode());
-  // if (!pointNode) return;
-  // IJKVec ijkPoints;
-  // d->logic()->getFiducialPosition(volumeNode, pointNode, ijkPoints);
-  // this->displayRegistrationPoint(ijkPoints);
+  // 配准点的投影
+  auto pointNode = vtkMRMLMarkupsFiducialNode::SafeDownCast(d->pointSelector->currentNode());
+  if (!pointNode) return;
+  IJKVec ijkPoints;
+  d->logic()->getFiducialPosition(volumeNode, pointNode, ijkPoints);
+  this->displayRegistrationPoint(ijkPoints);
 }
 
 void qSlicerDRRGeneratorModuleWidget::onOpacityChanged(double value)
@@ -525,6 +527,16 @@ void qSlicerDRRGeneratorModuleWidget::onResetRotation()
   d->logic()->resetRotation();
   this->onApplyDRR();
   d->onEnterConnection();
+}
+
+void qSlicerDRRGeneratorModuleWidget::onPointSelected(vtkMRMLNode* node)
+{
+  Q_D(qSlicerDRRGeneratorModuleWidget);
+  auto pointNode = vtkMRMLMarkupsFiducialNode::SafeDownCast(node);
+  if (!pointNode) return;
+  auto transformNode = d->logic()->getNodeByName<vtkMRMLLinearTransformNode>("VolumeTransform", true);
+  pointNode->SetAndObserveTransformNodeID(transformNode->GetID());
+  pointNode->GetDisplayNode()->SetVisibility(0);
 }
 
 void qSlicerDRRGeneratorModuleWidget::onVolumePropertyModified()
