@@ -62,10 +62,11 @@ class VTK_SLICER_DRRGENERATOR_MODULE_LOGIC_EXPORT vtkSlicerDRRGeneratorLogic : p
 
   vtkMRMLVolumeRenderingDisplayNode* createVolumeRenderingNode(vtkMRMLScalarVolumeNode* volumeNode);
 
-  void applyDRR(vtkMRMLScalarVolumeNode* volumeNode, vtkMRMLScalarVolumeNode* drrNode, double rotation[3],
+  void applyDRR(vtkMRMLScalarVolumeNode* volumeNode, vtkMRMLScalarVolumeNode* drrNode, double angle, double rotation[3],
                 double translation[3], int size[3]);
-  void getFiducialPosition(vtkMRMLScalarVolumeNode*, vtkMRMLMarkupsFiducialNode*, IJKVec&);
+  void getFiducialPosition(vtkMRMLMarkupsFiducialNode*, IJKVec&);
   void getDRRFromVolumeRendering(vtkMRMLScalarVolumeNode* drrNode);
+  void initializeCamera(vtkMRMLScalarVolumeNode* volumeNode);
   void resetRotation();
   void updateVolumePropertyNode(double wl, double ww, double op);
 

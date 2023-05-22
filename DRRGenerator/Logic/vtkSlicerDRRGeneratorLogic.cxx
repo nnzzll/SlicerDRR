@@ -136,6 +136,10 @@ void vtkSlicerDRRGeneratorLogic::SetThreeDView(qMRMLThreeDView* threeDView)
 {
   this->view = threeDView;
   this->camera = threeDView->cameraNode();
+  auto cameraNode = view->cameraNode();
+  auto transformNode = this->getNodeByName<vtkMRMLLinearTransformNode>("CameraTransform", true);
+  cameraNode->SetAndObserveTransformNodeID(transformNode->GetID());
+  threeDView->renderWindow()->Render();
 }
 
 void vtkSlicerDRRGeneratorLogic::ConvertEigenToVTK(Eigen::Matrix4d in, vtkMatrix4x4* out)
@@ -207,7 +211,7 @@ void vtkSlicerDRRGeneratorLogic::updateVolumePropertyNode(double wl, double ww, 
 }
 
 void vtkSlicerDRRGeneratorLogic::applyDRR(vtkMRMLScalarVolumeNode* volumeNode, vtkMRMLScalarVolumeNode* drrNode,
-                                          double rotation[3], double translation[3], int size[3])
+                                          double angle, double rotation[3], double translation[3], int size[3])
 {
   this->view->setFixedSize(size[0], size[1]);
   double bounds[6];
@@ -218,17 +222,7 @@ void vtkSlicerDRRGeneratorLogic::applyDRR(vtkMRMLScalarVolumeNode* volumeNode, v
       0.5 * (bounds[4] + bounds[5]),
   };
 
-  // 先将相机设置为初始位置
-  double position[3], focalPoint[3], viewUp[3]{0, 0, 1};
-  memcpy(focalPoint, center, 3 * sizeof(double));
-  memcpy(position, center, 3 * sizeof(double));
-  position[1] += 1000;  // 焦距默认设置为1000
-  this->camera->SetPosition(position);
-  this->camera->SetFocalPoint(focalPoint);
-  this->camera->SetViewUp(viewUp);
-
-  // 计算相机的旋转
-  Eigen::Matrix4d rx, ry, rz;
+  // 计算CT的旋转
   Eigen::Vector4d translationVec;
   const double dtr = 0.017453292519943295;
   rotation[0] *= dtr;
@@ -263,6 +257,19 @@ void vtkSlicerDRRGeneratorLogic::applyDRR(vtkMRMLScalarVolumeNode* volumeNode, v
   auto transformNode = this->getNodeByName<vtkMRMLLinearTransformNode>("VolumeTransform");
   this->ConvertEigenToVTK(volumeRot, transformMatrix);
   transformNode->SetMatrixTransformToParent(transformMatrix);
+
+  // 设置相机的旋转
+  angle *= dtr;
+  Eigen::Matrix4d cameraRot, rx, ry, rz;
+  Rx(center, 0, rx);
+  Ry(center, 0, ry);
+  Rz(center, -angle, rz);
+  cameraRot = rz * ry * rx;
+  vtkNew<vtkMatrix4x4> camRotMatrix;
+  this->ConvertEigenToVTK(cameraRot, camRotMatrix);
+  auto cameraTransformNode = this->getNodeByName<vtkMRMLLinearTransformNode>("CameraTransform");
+  cameraTransformNode->SetMatrixTransformToParent(camRotMatrix);
+
   this->camera->ResetClippingRange();  // 更新渲染的显示范围
 
   this->getDRRFromVolumeRendering(drrNode);
@@ -291,8 +298,7 @@ void vtkSlicerDRRGeneratorLogic::getDRRFromVolumeRendering(vtkMRMLScalarVolumeNo
   drrNode->SetAndObserveImageData(luminance->GetOutput());
 }
 
-void vtkSlicerDRRGeneratorLogic::getFiducialPosition(vtkMRMLScalarVolumeNode* volumeNode,
-                                                     vtkMRMLMarkupsFiducialNode* pointNode, IJKVec& ijkPoints)
+void vtkSlicerDRRGeneratorLogic::getFiducialPosition(vtkMRMLMarkupsFiducialNode* pointNode, IJKVec& ijkPoints)
 {
   double worldPosition[4]{0, 0, 0, 1}, imagePoint[3]{0, 0, 1};
   ijkPoints.clear();
@@ -306,4 +312,24 @@ void vtkSlicerDRRGeneratorLogic::getFiducialPosition(vtkMRMLScalarVolumeNode* vo
     imagePoint[1] = this->view->size().height() - imagePoint[1];
     ijkPoints.push_back({imagePoint[0], imagePoint[1]});
   }
+}
+
+void vtkSlicerDRRGeneratorLogic::initializeCamera(vtkMRMLScalarVolumeNode* volumeNode)
+{
+  double bounds[6];
+  volumeNode->GetBounds(bounds);
+  double center[3] = {
+      0.5 * (bounds[0] + bounds[1]),
+      0.5 * (bounds[2] + bounds[3]),
+      0.5 * (bounds[4] + bounds[5]),
+  };
+
+  // 先将相机设置为初始位置
+  double position[3], focalPoint[3], viewUp[3]{0, 0, 1};
+  memcpy(focalPoint, center, 3 * sizeof(double));
+  memcpy(position, center, 3 * sizeof(double));
+  position[1] += 1000;  // 焦距默认设置为1000
+  this->camera->SetPosition(position);
+  this->camera->SetFocalPoint(focalPoint);
+  this->camera->SetViewUp(viewUp);
 }

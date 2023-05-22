@@ -79,6 +79,7 @@ class qSlicerDRRGeneratorModuleWidgetPrivate
   qMRMLNodeComboBox* drrSelector;
   qMRMLNodeComboBox* xraySelector;
   qMRMLNodeComboBox* pointSelector;
+  ctkSliderWidget* angleSlider;
   ctkSliderWidget* rxSlider;
   ctkSliderWidget* rySlider;
   ctkSliderWidget* rzSlider;
@@ -190,6 +191,15 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrFormLayout->addRow("Registration Point", pointSelector);
 
   // DRR Parameter widgets
+  angleSlider = new ctkSliderWidget;
+  angleSlider->setSingleStep(0.5);
+  angleSlider->setDecimals(1);
+  angleSlider->setMinimum(-360);
+  angleSlider->setMaximum(360);
+  angleSlider->setValue(0);
+  angleSlider->setSuffix(" °");
+  drrFormLayout->addRow("Camera Angle: ", angleSlider);
+
   rxSlider = new ctkSliderWidget;
   rxSlider->setSingleStep(0.5);
   rxSlider->setDecimals(1);
@@ -332,6 +342,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::onEnterConnection()
 {
   Q_Q(qSlicerDRRGeneratorModuleWidget);
   connects.push_back(QObject::connect(applyButton, SIGNAL(clicked(bool)), q, SLOT(onApplyDRR())));
+  connects.push_back(QObject::connect(angleSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(rxSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(rySlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
   connects.push_back(QObject::connect(rzSlider, SIGNAL(valueChanged(double)), q, SLOT(onApplyDRR())));
@@ -425,8 +436,8 @@ void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
     size[0] = size[1] = (int)d->sizeSlider->value();
     size[2] = 1;
   }
-
-  d->logic()->applyDRR(volumeNode, drrNode, rotation, translation, size);
+  double angle = d->angleSlider->value();
+  d->logic()->applyDRR(volumeNode, drrNode, angle, rotation, translation, size);
   vtkNew<vtkMatrix4x4> IJKToRASDirectionMatrix;
   volumeNode->GetIJKToRASDirectionMatrix(IJKToRASDirectionMatrix);
   drrNode->SetIJKToRASDirectionMatrix(IJKToRASDirectionMatrix);
@@ -444,7 +455,7 @@ void qSlicerDRRGeneratorModuleWidget::onApplyDRR()
   auto pointNode = vtkMRMLMarkupsFiducialNode::SafeDownCast(d->pointSelector->currentNode());
   if (!pointNode) return;
   IJKVec ijkPoints;
-  d->logic()->getFiducialPosition(volumeNode, pointNode, ijkPoints);
+  d->logic()->getFiducialPosition(pointNode, ijkPoints);
   this->displayRegistrationPoint(ijkPoints);
 }
 
@@ -498,7 +509,7 @@ void qSlicerDRRGeneratorModuleWidget::onVolumeSelected(vtkMRMLNode* node)
   }
   auto transformNode = d->logic()->getNodeByName<vtkMRMLLinearTransformNode>("VolumeTransform", true);
   volumeNode->SetAndObserveTransformNodeID(transformNode->GetID());
-  d->threeDWidget->threeDView()->resetCamera();
+  d->logic()->initializeCamera(volumeNode);
   scene->EndState(vtkMRMLScene::BatchProcessState);
 }
 
