@@ -201,7 +201,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrFormLayout->addRow("Camera Angle: ", angleSlider);
 
   rxSlider = new ctkSliderWidget;
-  rxSlider->setSingleStep(0.5);
+  rxSlider->setSingleStep(0.1);
   rxSlider->setDecimals(1);
   rxSlider->setMinimum(-180);
   rxSlider->setMaximum(180);
@@ -210,7 +210,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrFormLayout->addRow("Rotation X: ", rxSlider);
 
   rySlider = new ctkSliderWidget;
-  rySlider->setSingleStep(0.5);
+  rySlider->setSingleStep(0.1);
   rySlider->setDecimals(1);
   rySlider->setMinimum(-180);
   rySlider->setMaximum(180);
@@ -219,7 +219,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrFormLayout->addRow("Rotation Y: ", rySlider);
 
   rzSlider = new ctkSliderWidget;
-  rzSlider->setSingleStep(0.5);
+  rzSlider->setSingleStep(0.1);
   rzSlider->setDecimals(1);
   rzSlider->setMinimum(-180);
   rzSlider->setMaximum(180);
@@ -231,7 +231,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrFormLayout->addRow(resetButton);
 
   txSlider = new ctkSliderWidget;
-  txSlider->setSingleStep(0.5);
+  txSlider->setSingleStep(0.1);
   txSlider->setDecimals(1);
   txSlider->setMinimum(-1000);
   txSlider->setMaximum(1000);
@@ -240,7 +240,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrFormLayout->addRow("Translation X: ", txSlider);
 
   tySlider = new ctkSliderWidget;
-  tySlider->setSingleStep(0.5);
+  tySlider->setSingleStep(0.1);
   tySlider->setDecimals(1);
   tySlider->setMinimum(-1000);
   tySlider->setMaximum(1000);
@@ -249,7 +249,7 @@ void qSlicerDRRGeneratorModuleWidgetPrivate::setupUi(qSlicerWidget* qSlicerDRRGe
   drrFormLayout->addRow("Translation Y: ", tySlider);
 
   tzSlider = new ctkSliderWidget;
-  tzSlider->setSingleStep(0.5);
+  tzSlider->setSingleStep(0.1);
   tzSlider->setDecimals(1);
   tzSlider->setMinimum(-1000);
   tzSlider->setMaximum(1000);

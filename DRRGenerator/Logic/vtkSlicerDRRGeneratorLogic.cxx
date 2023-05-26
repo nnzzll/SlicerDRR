@@ -265,9 +265,13 @@ void vtkSlicerDRRGeneratorLogic::applyDRR(vtkMRMLScalarVolumeNode* volumeNode, v
   Ry(center, 0, ry);
   Rz(center, -angle, rz);
   cameraRot = rz * ry * rx;
-  vtkNew<vtkMatrix4x4> camRotMatrix;
+  vtkNew<vtkMatrix4x4> camRotMatrix, currentCam;
   this->ConvertEigenToVTK(cameraRot, camRotMatrix);
   auto cameraTransformNode = this->getNodeByName<vtkMRMLLinearTransformNode>("CameraTransform");
+  cameraTransformNode->GetMatrixTransformToParent(currentCam);
+  camRotMatrix->SetElement(0, 3, currentCam->GetElement(0, 3));
+  camRotMatrix->SetElement(1, 3, currentCam->GetElement(1, 3));
+  camRotMatrix->SetElement(2, 3, currentCam->GetElement(2, 3));
   cameraTransformNode->SetMatrixTransformToParent(camRotMatrix);
 
   this->camera->ResetClippingRange();  // 更新渲染的显示范围
